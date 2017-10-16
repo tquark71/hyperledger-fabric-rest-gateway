@@ -1,0 +1,46 @@
+{
+    "orgName": "org1",
+    "port": "4001",
+    "keyValueStore": "./volume/fabric1.0/keyValStore",
+    "logPath": "./volume/logs",
+    "eventWaitTime": "30000",
+    "jwtSecret":"secret",
+    "tlsOptions": {
+
+        "tlsEnable": false,
+        "keyFile": "key.pem",
+        "certFile": "cert.pem"
+    },
+
+    "ca": {
+        "admin": {
+            "enrollmentID": "admin",
+            "enrollmentSecret": "adminpw"
+        },
+        "tlsOptions": {
+            "trustRoots": [],
+            "verify": false
+        }
+    },
+    "eventHub": {
+        "retryTimes": "10"
+    },
+    "storage": {
+        "type": "mongo",
+        "DbAdress": {
+            "ip": "localhost",
+            "port": "27017",
+            "username": "",
+            "password": ""
+        }
+    },
+    "monitor": {
+        "enabled": true,
+        "interval": 3000
+    },
+    "swagger": {
+        "hostName": "localhost"
+    },
+    "mode": "prod",
+    "logLevel": "DEBUG"
+}

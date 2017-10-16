@@ -1,0 +1,2151 @@
+---
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Hyperledger Fabric Gateway API"
+host: "localhost:4000"
+basePath: "/"
+schemes:
+- "http"
+produces:
+- "application/json"
+paths:
+  /signRequest/sendRequest:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "send signRequest"
+      description: "send signRequest"
+      operationId: "sendSignRequest"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","user"]
+          properties:
+            uuid:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/request/channelConfig:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "Create a signRequest"
+      description: "Create a signRequest"
+      operationId: "createChannelConfigSignReqeust"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","name","sourceType","user","policy"]
+          properties:
+            name:
+              type: string
+              example: update-mychannel
+            description:
+              example: I wanne upgrade channel mychannel
+              type: string
+            channelName:
+              example: mychannel
+              type: "string"
+            sourceType:
+              enum: ["buffer", "fs"]
+              type: "string"
+              example: fs
+            policy:
+              $ref: "#/definitions/endorsement-policy"
+            opt:
+              type: object
+              properties:
+                configUpdate:
+                  type: object
+                configUpdatePath:
+                  type: string
+                  example: configUpdateEx.pb
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/request:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "api for receive request"
+      description: "receive a signRequest"
+      operationId: "receiveSignReqeust"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","toRole","type","creatorName","contentBytes","description","signRequestSignatureBytes"]
+          properties:
+            uuid:
+              type: string
+            description:
+              type: string
+            toRole:
+              type: string
+            type:
+              example: mychannel
+              type: "string"
+            content:
+              type: "object"
+            signRequestSignatureBytes:
+              type: "object"
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/response:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "api for receive request"
+      description: "receive a signRequest"
+      operationId: "receiveSignRequestResponse"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","status","responser","payload"]
+          properties:
+            uuid:
+              type: string
+            status:
+              type: string
+            responser:
+              type: object
+            payload:
+              type: object
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/response/accept:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "api for receive request"
+      description: "receive a signRequest"
+      operationId: "signAndResponse"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","user"]
+          properties:
+            uuid:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/request/query:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "query signRequest"
+      description: "query a signRequest"
+      operationId: "queryInnerSignRequest"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["user"]
+          properties:
+            condition:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: CHAINCODE_CONFIG_REQUEST
+                uuid:
+                  type: string
+                fullFilled:
+                  type: boolean
+                creatorName:
+                  type: string
+                  example: orgAdmin
+                from:
+                  type: string
+                  example: "2017-10-15"
+                to:
+                  type: string
+            user:
+              $ref: "#/definitions/user"
+            sortCondition:
+                  type: object
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/response/query:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "query outer signRequest"
+      description: "query a outer signRequest"
+      operationId: "queryOuterSignRequest"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["user"]
+          properties:
+            condition:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: CHAINCODE_CONFIG_REQUEST
+                uuid:
+                  type: string
+                status:
+                  type: string
+                  example: PENDING
+                fromMspID:
+                  type: string
+                  example: Org1MSP
+                toRole:
+                  type: string
+                  example: member
+                signerName:
+                  type: string
+                  example: orgAdmin
+                from:
+                  type: string
+                  example: "2017-10-15"
+                to:
+                  type: string
+            user:
+              $ref: "#/definitions/user"
+            sortCondition:
+                  type: object
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /signRequest/response/reject:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "api for receive request"
+      description: "receive a signRequest"
+      operationId: "signAndResponse"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","user","reason"]
+          properties:
+            uuid:
+              type: string
+            resaon:
+              type: string
+              example: This channelConfig is not make sense
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "signRequest"
+  /chaincode/install:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "Install chaincode"
+      description: "Install chaincode on the channel at all endorse peers"
+      operationId: "chaincodeInstall"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["chaincodeName","channelName","chaincodePath","chaincodeVersion","sourceType","user"]
+          properties:
+            chaincodeName:
+              example: mycc
+              type: "string"
+            channelName:
+              type: "string"
+              example: mychannel
+              # required: true
+            chaincodePath:
+              type: "string"
+              example: chaincodes/testCC
+              # required: true
+            chaincodeVersion:
+              type: "string"
+              example: v1
+              # required: true
+            sourceType:
+              enum: ["sourceCode", "package"]
+              type: "string"
+              example: sourceCode
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/data:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincode data"
+      description: "query chaincode data from sepcific peer"
+      operationId: "getChaincodeData"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["chaincodeName","channelName","peerName","user"]
+          properties:
+            chaincodeName:
+              example: mycc
+              type: "string"
+            peerName:
+              example: peer1
+              type: "string"
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+  /chaincode/instantiate:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "instantiate chaincdoe"
+      description: "instantiate chaincode at all endorse peers of a channel, chaincode should be install chaincode on peer first"
+      operationId: "chaincodeInstantiate"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "channelName",
+        "chaincodeName",
+        "chaincodeVersion",
+        "functionName",
+        "args",
+        "user"
+    ]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            chaincodeVersion:
+              type: "string"
+              example: v1
+            functionName:
+              type: "string"
+              example: init
+            args:
+              type: "array"
+              example: ["a","100","b","200"]
+              items:
+                type: "string"
+            opt:
+              type: "object"
+              properties:
+                endorsement-policy:
+                  type: string
+                  $ref: "#/definitions/endorsement-policy"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/upgrade:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "upgrade chaincdoe"
+      description: "upgrade chaincode at all endorse peer of a channel, chaincode should be install chaincode on peer first"
+      operationId: "chaincodeUpgrade"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "upgrade request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "channelName",
+        "chaincodeName",
+        "chaincodeVersion",
+        "functionName",
+        "args",
+        "user"
+    ]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            chaincodeVersion:
+              type: "string"
+              example: v1
+            functionName:
+              type: "string"
+              example: init
+            args:
+              type: "string"
+              example: ["a","1000","b","200"]
+            user:
+              $ref: "#/definitions/user"
+            opt:
+              type: "object"
+              properties:
+                endorsement-policy:
+                  type: string
+                  $ref: "#/definitions/endorsement-policy"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/invoke:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "invoke chaincdoe"
+      description: "Send endorse request to all endorse peer on the channel at one time, then send the reponse to order if there any response is good, it may cause rejection of insufficiency endorsement"
+      operationId: "chaincodeInvoke"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["move","a","b","10"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/invokeE:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "invoke chaincdoe with endorsepolicy"
+      description: "Different with \"\/chaincode\/invoke\", this rest api will handle the endorse request based on endorse policy, to invoke this api, you should make sure your monitr module has been enabled"
+      operationId: "chaincodeInvokeE"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["move","a","b","10"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/query:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincode"
+      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
+      operationId: "chaincodeQuery"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["query","a"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+
+  /chaincode/queryHistory:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincdoe"
+      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
+      operationId: "chaincodeQueryHistory"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query history request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: "mycc"
+            channelName:
+              type: "string"
+              example: "mychannel"
+            functionName:
+              type: "string"
+              example: "query"
+            args:
+              type: "array"
+              example: ["a"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+
+  /chaincode/installed:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query installed chaincdoe"
+      description: "get installed chaincode from a self organiztion's peer, peer's name and url was mapped on the network-config.json"
+      operationId: "getInstalledChaincodes"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query history request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "chaincode"
+
+  /channel/list:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query all channel on a peer"
+      description: "Query a self organization's peer to get all channel this peer join."
+      operationId: "getChannels"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query channels request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /channel/info:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query channel's info"
+      description: "Get informations, like height, current hash... and so on, of a channel"
+      operationId: "getChainInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query channel info request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user","channelName"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /channel/addOrg:
+    post:
+      tags:
+      - "Channel"
+      summary: "Add an org to a channel"
+      description: "Send a resquest to add a org to a existed channel, gatewau will send request to hyperledger to get channel config
+      and use this config to add additional org.\n
+      There are to method to get new org's information to add to config file.\n First is file system, you need to pass the org's name, mspID to the request\n
+      Second, pass based46 encoded certification to gateway.
+      Both two method will leverage \"configlator\" to calculate confing updata protobuffer, so make sure your configlater url has been set well before you trigger
+      this api"
+      operationId: "addOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "add org request"
+        required: true
+        schema:
+          type: "object"
+          required: ["sourceType","user","channelName"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            sourceType:
+              enum: ["fs","str"]
+              type: "string"
+              example: fs
+            opt:
+              type: "object"
+              required: ["type",mspID]
+              properties:
+                type:
+                  type: "string"
+                  enum: ["peer","order"]
+                  example: peer
+                orgName:
+                  type: "string"
+                  example: org1.example.com
+                  description: "required if sourceType is 'fs',orgName which will be mapped to the folder in /artifacts/crypto-config"
+                mspID:
+                  example: Org3MSP
+                  type: "string"
+                hashFamily:
+                  type: "string"
+                hashFunction:
+                  type: "string"
+                cacertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+                tlscacertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+                admincertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+  /channel/create:
+    post:
+      tags:
+      - "Channel"
+      summary: "create a channel"
+      description: "Create a new channel in the network, pass the genesis tx file name which suppose place under the path: /artifact/channel"
+      operationId: "createChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "create channels request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","sourceType","source","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            sourceType:
+              type: string
+              enum: ["local","buffer","signRequest"]
+            source:
+              example: mychannel.tx
+              description: "Filename of genesis tx file in the /artifacts/channel/, obtained from the configgen tool."
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /channel/instantiated:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query instantiated chaincode of the channel"
+      description: "Send a request to a peer to query instantiated chaincode of the specific channel"
+      operationId: "getInstantiatedChaincodes"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query instantiated chaincodes request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","peerName","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            peerName:
+              example: peer1
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+  /channel/join:
+    post:
+      tags:
+      - "Channel"
+      summary: "Join channel"
+      description: "Send a request to all peer of self organization to join the channel"
+      operationId: "joinChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "join channel request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /channel/config:
+    post:
+      tags:
+      - "Channel"
+      summary: "Join channel"
+      description: "Send a request to a orderer to get the channel's config buffer"
+      operationId: "getChannelConfig"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get channel config request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /channel/update:
+    post:
+      tags:
+      - "Channel"
+      summary: "Update channel"
+      description: "Send a request to a orderer to update the channel's config"
+      operationId: "updateChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Update channel config request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","sourceType","user","source"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            sourceType:
+              type: "string"
+              enum: ["local","buffer","signRequest"]
+              example: local
+              description: "File's name, under the path /artifact/channel, of configUpdate proto buffer generated by configlator"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+  /channel/init:
+    post:
+      tags:
+      - "Channel"
+      summary: "Init channel"
+      description: "Send a request to init a channel obj(get msp config and so on)"
+      operationId: "initChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Init channel request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "channel"
+
+  /block/action:
+    post:
+      tags:
+      - "Block"
+      summary: "Get parsed block info"
+      description: "Get a block payload then parsed to readable JOSN"
+      operationId: "getBlockActionByNumber"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get block actions request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","blockNum","user","peerName"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            peerName:
+              type: "string"
+              example: peer1
+            blockNum:
+              type: "string"
+              example: "1"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "blockAndTx"
+  /block/info:
+    post:
+      tags:
+      - "Block"
+      summary: "Get block info"
+      description: "Get a block payload"
+      operationId: "getBlockByNumber"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get block request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","blockNum","user"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            blockNum:
+              type: "string"
+              example: 1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "blockAndTx"
+  /member/list:
+    post:
+      tags:
+      - "Member"
+      summary: "Get member list"
+      description: "Get registered members name"
+      operationId: "getUserNameList"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get list request"
+        required: true
+        schema:
+          type: "object"
+          required: ["user"]
+          properties:
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "member"
+  /member/cert:
+    post:
+      tags:
+      - "Member"
+      summary: "Get member's certification"
+      description: "Accroding to the passed user object, get the certification"
+      operationId: "getCertification"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get cert request"
+        required: true
+        schema:
+          type: "object"
+          required: ["user"]
+          properties:
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "member"
+  /member/register:
+    post:
+      tags:
+      - "Member"
+      summary: "Register an user and enroll it"
+      description: "Register the user and enroll it then user can use its ID and password to operate hyperledger"
+      operationId: "registerAndEnrollUser"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Register and enroll request"
+        required: true
+        schema:
+          type: "object"
+          required: ["username","password","user"]
+          properties:
+            username:
+              type: "string"
+              example: userID
+            password:
+              type: string
+              example: userpassword
+            user:
+              $ref: "#/definitions/caAdmin"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "member"
+  /event/register/ccEvent/url:
+    post:
+      tags:
+      - "Event"
+      summary: "Register a url that the specific chaincode event will be sent to it"
+      description: "Register a url that the specific chaincode event will be sent to it"
+      operationId: "registerEventToUrl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Register request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "chaincodeName",
+        "eventName",
+        "peerName",
+        "user",
+        "url"
+    ]
+          properties:
+            chaincodeName:
+              type: string
+              example: mycc
+            eventName:
+              type: string
+              example: testEvent
+            peerName:
+              type: string
+              example: peer1
+            url:
+              type: string
+              example: "http://test/url/used/to/recive/event"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+  /event/unregister/ccEvent/url:
+    post:
+      tags:
+      - "Event"
+      summary: "Unregister a url that the specific chaincode event will be sent to it"
+      description: "Unregister a url that the specific chaincode event will be sent to it"
+      operationId: "unregisterEventToUrl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Unregister request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "chaincodeName",
+        "eventName",
+        "peerName",
+        "user",
+        "url"
+    ]
+          properties:
+            chaincodeName:
+              type: string
+              example: mycc
+            eventName:
+              type: string
+              example: testEvent
+            peerName:
+              type: string
+              example: peer1
+            url:
+              type: string
+              example: "http://test/url/used/to/recive/event"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+
+  /event/register/blockEvent/url:
+    post:
+      tags:
+      - "Event"
+      summary: "Register a url that the block event will be sent to it"
+      description: "Register a url that the block event will be sent to it"
+      operationId: "registerEventToUrl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Register request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "peerName",
+        "user",
+        "url"
+    ]
+          properties:
+            peerName:
+              type: string
+              example: peer1
+            url:
+              type: string
+              example: "http://test/url/used/to/recive/event"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+  /event/unregister/blockEvent/url:
+    post:
+      tags:
+      - "Event"
+      summary: "Unregister a url that the block event will be sent to it"
+      description: "Unregister a url that the block event will be sent to it"
+      operationId: "unregisterEventToUrl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Register request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "peerName",
+        "user",
+        "url"
+    ]
+          properties:
+            peerName:
+              type: string
+              example: peer1
+            url:
+              type: string
+              example: "http://test/url/used/to/recive/event"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+  /event/history/all:
+    post:
+      tags:
+      - "Event"
+      summary: "List all event history"
+      description: "List all event history"
+      operationId: "returnAllEventHistory"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "List request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "peerName",
+        "user"
+    ]
+          properties:
+            peerName:
+              type: string
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+  /event/history/failed:
+    post:
+      tags:
+      - "Event"
+      summary: "List failed event history"
+      description: "List failed event history"
+      operationId: "returnFailedEventHistory"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "List request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "peerName",
+        "user"
+    ]
+          properties:
+            peerName:
+              type: string
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "event"
+
+  /monitor/peer/info:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get peer's info"
+      description: "Get peer's info"
+      operationId: "returnPeerInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        in: "query"
+        description: "peerName you want to query info"
+        required: true
+        # example: peer1
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/block/trend:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get Blocks's txs number"
+      description: "Get Blocks's txs number"
+      operationId: "returnBlocksTrend"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        in: "query"
+        description: "peerName you want to query info"
+        required: true
+        # example: peer1
+        type: "string"
+      - name: "channelName"
+        in: "query"
+        description: "channelName you want to query info"
+        required: true
+        # example: peer1
+        type: "string"
+      - name: "lastNumber"
+        in: "query"
+        description: "How many block you want to know the tx number"
+        required: true
+        # example: peer1
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/channel/info:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get channel's info"
+      description: "Get channel's info"
+      operationId: "returnChannelInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        # example: peer1
+        in: "query"
+        description: "peerName you want to query info"
+        required: true
+        type: "string"
+      - name: "channelName"
+        in: "query"
+        # example: mychannel
+        description: "channelName you want to query info"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/block/info:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get block's info"
+      description: "Get block's info"
+      operationId: "returnBlockInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        # example: peer1
+        in: "query"
+        description: "peerName you want to query info"
+        required: true
+        type: "string"
+      - name: "channelName"
+        in: "query"
+        # example: mychannel
+        description: "channelName you want to query info"
+        required: true
+        type: "string"
+      - name: "blockNumber"
+        in: "query"
+        # example: "1"
+        description: "blockNumber you want to query info"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/tx/last:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get lastest tx info"
+      description: "Get tx's info"
+      operationId: "returnLastTxs"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        in: "query"
+        # example: peer1
+        description: "peerName you want to query info"
+        required: true
+        type: "string"
+      - name: "channelName"
+        in: "query"
+        # example: mychannel
+        description: "channelName you want to query info"
+        required: true
+        type: "string"
+      - name: "lastNumber"
+        in: "query"
+        # example: "20"
+        description: "How many tx want to query info"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/chaincode/info:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get chaincode info"
+      description: "Get chaincode info"
+      operationId: "returnChaincodeInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      - name: "peerName"
+        in: "query"
+
+          # example: peer1
+        description: "peerName you want to query info"
+        required: true
+        type: "string"
+      - name: "channelName"
+        in: "query"
+        # example: mychannel
+        description: "channelName you want to query info"
+        required: true
+        type: "string"
+      - name: "chaincodeName"
+        in: "query"
+        # example: mycc
+        description: "chaincode name you want to query info"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/network/info:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get network-config"
+      description: "Get network-config"
+      operationId: "returnNetworkConfig"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/network/status:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get network-config"
+      description: "Get network-config"
+      operationId: "returnAliveState"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /monitor/network/my:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Get self network-config"
+      description: "Get self network-config"
+      operationId: "returnSelfNetworkConfig"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Authorization"
+        in: "header"
+        description:  "asccess token"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+  /login:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Monitor login api"
+      description: "Monitor login api, username and password are defined in the monitor/userDb.json"
+      operationId: "loginMonitor"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "query"
+        description: "username you want to query info"
+        required: true
+        type: "string"
+      - name: "password"
+        in: "query"
+        description: "peerName you want to query info"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/inline_response_default"
+      x-swagger-router-controller: "monitor"
+definitions:
+  Product:
+    type: "object"
+    properties:
+      product_id:
+        type: "string"
+        description: "Unique identifier representing a specific product for a given\
+          \ latitude & longitude. For example, uberX in San Francisco will have a\
+          \ different product_id than uberX in Los Angeles."
+      description:
+        type: "string"
+        description: "Description of product."
+      display_name:
+        type: "string"
+        description: "Display name of product."
+      capacity:
+        type: "string"
+        description: "Capacity of product. For example, 4 people."
+      image:
+        type: "string"
+        description: "Image URL representing the product."
+  PriceEstimate:
+    type: "object"
+    properties:
+      product_id:
+        type: "string"
+        description: "Unique identifier representing a specific product for a given\
+          \ latitude & longitude. For example, uberX in San Francisco will have a\
+          \ different product_id than uberX in Los Angeles"
+      currency_code:
+        type: "string"
+        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
+      display_name:
+        type: "string"
+        description: "Display name of product."
+      estimate:
+        type: "string"
+        description: "Formatted string of estimate in local currency of the start\
+          \ location. Estimate could be a range, a single number (flat rate) or \"\
+          Metered\" for TAXI."
+      low_estimate:
+        type: "number"
+        description: "Lower bound of the estimated price."
+      high_estimate:
+        type: "number"
+        description: "Upper bound of the estimated price."
+      surge_multiplier:
+        type: "number"
+        description: "Expected surge multiplier. Surge is active if surge_multiplier\
+          \ is greater than 1. Price estimate already factors in the surge multiplier."
+  Profile:
+    type: "object"
+    properties:
+      first_name:
+        type: "string"
+        description: "First name of the Uber user."
+      last_name:
+        type: "string"
+        description: "Last name of the Uber user."
+      email:
+        type: "string"
+        description: "Email address of the Uber user"
+      picture:
+        type: "string"
+        description: "Image URL of the Uber user."
+      promo_code:
+        type: "string"
+        description: "Promo code of the Uber user."
+  Activity:
+    type: "object"
+    properties:
+      uuid:
+        type: "string"
+        description: "Unique identifier for the activity"
+  Activities:
+    type: "object"
+    properties:
+      offset:
+        type: "integer"
+        format: "int32"
+        description: "Position in pagination."
+      limit:
+        type: "integer"
+        format: "int32"
+        description: "Number of items to retrieve (100 max)."
+      count:
+        type: "integer"
+        format: "int32"
+        description: "Total number of items available."
+      history:
+        type: "array"
+        items:
+          $ref: "#/definitions/inline_response_200_3_history"
+  Error:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      message:
+        type: "string"
+      fields:
+        type: "string"
+  inline_response_200:
+    properties:
+      product_id:
+        type: "string"
+        description: "Unique identifier representing a specific product for a given\
+          \ latitude & longitude. For example, uberX in San Francisco will have a\
+          \ different product_id than uberX in Los Angeles."
+      description:
+        type: "string"
+        description: "Description of product."
+      display_name:
+        type: "string"
+        description: "Display name of product."
+      capacity:
+        type: "string"
+        description: "Capacity of product. For example, 4 people."
+      image:
+        type: "string"
+        description: "Image URL representing the product."
+  inline_response_default:
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      message:
+        type: "string"
+      fields:
+        type: "string"
+  inline_response_200_1:
+    properties:
+      product_id:
+        type: "string"
+        description: "Unique identifier representing a specific product for a given\
+          \ latitude & longitude. For example, uberX in San Francisco will have a\
+          \ different product_id than uberX in Los Angeles"
+      currency_code:
+        type: "string"
+        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
+      display_name:
+        type: "string"
+        description: "Display name of product."
+      estimate:
+        type: "string"
+        description: "Formatted string of estimate in local currency of the start\
+          \ location. Estimate could be a range, a single number (flat rate) or \"\
+          Metered\" for TAXI."
+      low_estimate:
+        type: "number"
+        description: "Lower bound of the estimated price."
+      high_estimate:
+        type: "number"
+        description: "Upper bound of the estimated price."
+      surge_multiplier:
+        type: "number"
+        description: "Expected surge multiplier. Surge is active if surge_multiplier\
+          \ is greater than 1. Price estimate already factors in the surge multiplier."
+  inline_response_200_2:
+    properties:
+      first_name:
+        type: "string"
+        description: "First name of the Uber user."
+      last_name:
+        type: "string"
+        description: "Last name of the Uber user."
+      email:
+        type: "string"
+        description: "Email address of the Uber user"
+      picture:
+        type: "string"
+        description: "Image URL of the Uber user."
+      promo_code:
+        type: "string"
+        description: "Promo code of the Uber user."
+  sdkResoponse:
+    properties:
+      sdkResult:
+        type: "object"
+  user:
+    required: [enrollID,enrollSecret]
+    properties:
+        enrollID:
+          type: "string"
+          example: orgAdmin
+        enrollSecret:
+          type: "string"
+          example: "87654321"
+  caAdmin:
+    required: [enrollID,enrollSecret]
+    properties:
+        enrollID:
+          type: "string"
+          example: caAdmin
+        enrollSecret:
+          type: "string"
+          example: "87654321"
+  inline_response_200_3_history:
+    properties:
+      uuid:
+        type: "string"
+        description: "Unique identifier for the activity"
+  inline_response_200_3:
+    properties:
+      offset:
+        type: "integer"
+        format: "int32"
+        description: "Position in pagination."
+      limit:
+        type: "integer"
+        format: "int32"
+        description: "Number of items to retrieve (100 max)."
+      count:
+        type: "integer"
+        format: "int32"
+        description: "Total number of items available."
+      history:
+        type: "array"
+        items:
+          $ref: "#/definitions/inline_response_200_3_history"
+  endorsement-policy:
+    properties:
+      identities:
+        type: array
+        items:
+          type: "object"
+          properties:
+            role:
+              type: object
+              properties:
+                name:
+                  type: string
+                  enum: [member,admin]
+                  example: member
+                mspId:
+                  type: string
+                  example: Org2MSP
+      policy:
+        type: object
+        example:
+          1-of: [
+            signed-by: 0
+            ]
+securityDefinitions:
+   # X-API-Key: abcdef12345
+   APIKeyHeader:
+     type: apiKey
+     in: header
+     name: X-API-Key

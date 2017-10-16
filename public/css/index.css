@@ -1,0 +1,108 @@
+.title-icon{
+    height: 54px;
+    width: 54px;
+    margin-left: 20px;
+}
+.title-text{
+    font-size: 25px;
+    font-weight: 600;
+    margin-left: 16px;
+    margin-top: 16px;
+
+}
+.sub-title-text {
+    font-size: 20px;
+    font-weight: 600;
+    margin-left: 20px;
+    margin-top: 20px;
+}
+.channel-page-title-text{
+    font-size: 30px;
+    font-weight: 600;
+
+}
+.card-subtitle-text{
+    font-size: 15px;
+    margin-left: 10px;
+    margin-top: -10px;
+
+}
+
+.chartContainer > div:nth-of-type(1){
+    height: 200px !important;
+}
+.chain-enter{
+    opacity: 0.01;
+}
+.chain-enter.chain-enter-active {
+    opacity: 1;
+	transition: opacity 1s ease;
+	transition-duration: 3000ms;
+
+  }
+  .chain-leave {
+    opacity: 1;
+  }
+  .chain-leave.chain-leave-active {
+    opacity: 0.01;
+    transition: opacity 300ms ease-in;
+  }
+.example-enter {
+    opacity: 0.01;
+    transform: translate(2000px,0);
+    transform: translate3d(2000px,0,0);
+  }
+
+  .example-enter.example-enter-active {
+    opacity: 1;
+	transition: transform 1s ease;
+	transform:   translate(0,0);
+	transform: translate3d(0,0,0);
+
+	transition-duration: 3000ms;
+
+
+  }
+
+  .example-leave {
+    opacity: 1;
+  }
+
+  .example-leave.example-leave-active {
+    opacity: 0.01;
+    transition: opacity 300ms ease-in;
+  }
+
+  .block-fly-in-div{
+    border: 5px solid #b4b7c1;
+    border-radius: 26px;
+    background: #59c8d0;
+    height: 300px;
+    width: 100%;
+    display: flex;
+  }
+
+  .block-fly-in-block{
+
+  }
+  .block-fly-in-block p{
+    font-size: 20px;
+    font-weight: 900;
+    color: #d7a548;
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+  .content-center-div{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .block-fly-in-block button :nth-child(1){
+      height: 100%
+  }
+  .block-fly-in-block button :nth-child(1) :nth-child(2){
+   display: flex;
+   align-content: center;
+   justify-content: center;
+}

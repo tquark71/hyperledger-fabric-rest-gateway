@@ -1,0 +1,38 @@
+version: '3'
+services:
+  csrs1:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/cs/rs1:/data/db
+    command: mongod --noauth --configsvr --replSet csrs --dbpath /data/db
+  csrs2:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/cs/rs2:/data/db
+    command: mongod --noauth --configsvr --replSet csrs --dbpath /data/db
+  csrs3:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/cs/rs3:/data/db
+    command: mongod --noauth --configsvr --replSet csrs --dbpath /data/db
+  mongos:
+    ports:
+      - "27017:27017"
+    image: mongo:latest
+    command: mongos --noauth --configdb csrs/csrs1:27019,csrs2:27019,csrs3:27019
+  shrs1:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/sh/rs1:/data/db
+    command: mongod --noauth --dbpath /data/db --shardsvr --replSet shrs
+  shrs2:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/sh/rs2:/data/db
+    command: mongod --noauth --dbpath /data/db --shardsvr --replSet shrs
+  shrs3:
+    image: mongo:latest
+    volumes:
+      - /data/mongodbtest/sh/rs3:/data/db
+    command: mongod --noauth --dbpath /data/db --shardsvr --replSet shrs
+
