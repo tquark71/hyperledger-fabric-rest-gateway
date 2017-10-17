@@ -8,7 +8,7 @@ module.exports.innerSignRequestSchema = schema({
     description: String,
     policy: mongoose.Schema.Types.Mixed,
     contentBytes: Buffer,
-    responses: mongoose.Schema.Types.Mixed,
+    responses: [Buffer],
     fullfilled: Boolean,
     creatorName: String,
     signRequestSignatureBytes: Buffer,
@@ -39,6 +39,7 @@ module.exports.sendHistorySchema = schema({
     url: String,
     type: String,
     uuid: String,
+    meta: mongoose.Schema.Types.Mixed,
     body: mongoose.Schema.Types.Mixed,
     sendTime: {
         type: Date,

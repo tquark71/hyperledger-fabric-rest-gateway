@@ -92,10 +92,12 @@ module.exports.signAndResponse = (req, res, next) => {
     var body = req.swagger.params.request.value
     var user = body.user
     var uuid = body.uuid;
+
+    var toRole = body.toRole
     hyUtil.user
         .matchUserDb(user.enrollID, user.enrollSecret).then((result) => {
         var userObj = hyUtil.user.getUser(user.enrollID)
-        return signRequestManger.getOuterSignRequestObj(uuid).then((outerSignRequest) => {
+        return signRequestManger.getOuterSignRequestObj(uuid, toRole).then((outerSignRequest) => {
             return outerSignRequest.acceptRequest(user.enrollID, userObj)
         })
     }).then((result) => {

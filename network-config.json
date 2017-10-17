@@ -93,28 +93,6 @@
                 }]
 
             }
-        },
-        "test": {
-            "orderers": [
-                "orderer"
-            ],
-            "peers": {
-                "org1": [{
-                    "name": "peer1",
-                    "type": "e"
-                }, {
-                    "name": "peer2",
-                    "type": "e"
-                }],
-                "org2": [{
-                    "name": "peer1",
-                    "type": "e"
-                }, {
-                    "name": "peer2",
-                    "type": "c"
-                }]
-
-            }
         }
     }
 

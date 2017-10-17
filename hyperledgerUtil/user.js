@@ -105,7 +105,7 @@ var enrollCaAdmin = function() {
                     })
                     .then(() => {
                         users[caAdminEnrollID] = member
-                        orgAdmin.isCaAdmin = true;
+                        member.isCaAdmin = true;
 
                         return client.setUserContext(member)
 

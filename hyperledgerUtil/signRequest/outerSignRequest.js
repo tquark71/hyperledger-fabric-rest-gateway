@@ -206,7 +206,10 @@ var outerSignRequest = class {
                 sendRequest = new SendRequest({
                     url: helper.getGatewayAddressByMspID(this.fromMspID) + '/signRequest/response',
                     type: constants.CHANNEL_CONFIG_RESPONSE,
-                    body: body
+                    body: body,
+                    meta: {
+                        toRole: this.toRole
+                    }
                 })
             }
 

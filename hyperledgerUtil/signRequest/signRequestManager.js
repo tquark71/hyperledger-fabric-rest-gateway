@@ -61,7 +61,7 @@ function receiveOuterSignRequest(request) {
 }
 function getOuterSignRequestObj(uuid, toRole) {
     logger.debug('<======== getOuterSignRequestObj start ==========>')
-    if (outerSignRequestCollection[uuid][toRole]) {
+    if (outerSignRequestCollection[uuid] && outerSignRequestCollection[uuid][toRole]) {
         logger.debug('find outer request in cach, return');
         return Promise.resolve(outerSignRequestCollection[uuid][toRole])
     } else {

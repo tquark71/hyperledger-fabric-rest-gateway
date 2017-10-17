@@ -22,6 +22,7 @@ var _policiesProto = grpc.load(__dirname + '/protos/common/policies.proto').comm
 var _chaincodeProto = grpc.load(__dirname + '/protos/peer/chaincode.proto').protos;
 var _chaincodeDataProto = grpc.load(__dirname + '/protos/peer/chaincode_data.proto').protos;
 var _commomProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
+var _configtxProto = grpc.load(__dirname + '/protos/common/configtx.proto').common;
 var _mspPrincipalProto = grpc.load(__dirname + '/protos/msp/msp_principal.proto').common;
 var ORGS = hfc.getConfigSetting('network-config');
 
@@ -251,7 +252,7 @@ var createChannel = function(channelName, sourceType, source, userContext) {
     }
     configUpdate = client.extractChannelConfig(envelope);
     logger.debug(util.format('Successfully acquired admin user for the organization "%s"', myOrgName));
-    let signature = client.signChannelConfig(channelConfig);
+    let signature = client.signChannelConfig(configUpdate);
 
     let request = {
         config: configUpdate,
@@ -355,60 +356,93 @@ var getChannelConfig = (channelName, userContext, writePath) => {
 var updateChannel = (channelName, sourceType, source, userContext) => {
     var channel = channels.getChannel(channelName)
     var configUpdate
-    var signatures
+    var signatures = []
     var errMsg = ""
+    var promiseArr = [];
     if (sourceType == 'local') {
         try {
             configUpdate = fs.readFileSync(path.join(__dirname, '../artifacts/channel/', source))
-
+            promiseArr.push(Promise.resolve())
         } catch (e) {
             errMsg = "cant not find the configUpdate at " + path.join(__dirname, '../artifacts/channel/', source)
             throw new Error(errMsg)
         }
     } else if (sourceType == 'buffer') {
         configUpdate = source
+        promiseArr.push(Promise.resolve())
+
     } else if (sourceType == 'signRequest') {
-        let signRequest = signRequestManager.getInnerSignRequestObj(source);
-        if (!signRequest.isFullFilled()) {
-            errMsg = "signRequest have not fullfiled";
-            throw new Error(errMsg)
+        let p = signRequestManager.getInnerSignRequestObj(source).then((signRequest) => {
+            if (!signRequest.isFullFilled()) {
+                errMsg = "signRequest have not fullfiled";
+                throw new Error(errMsg)
 
-        } else if (signRequest._type != constants.CHANNEL_CONFIG_REQUEST) {
-            errMsg = `${source} is not a channel config sign request`
-            throw new Error(errMsg)
+            } else if (signRequest._type != constants.CHANNEL_CONFIG_REQUEST) {
+                errMsg = `${source} is not a channel config sign request`
+                throw new Error(errMsg)
 
-        } else if (signRequest.content.channelName != channelName) {
-            errMsg = `${source} is not for the channel ${channelName}`
-        } else {
-            configUpdate = signRequest.content.configUpdate;
-            signatures = signRequest._responses;
-        }
+            } else if (signRequest.content.channelName != channelName) {
+                errMsg = `${source} is not for the channel ${channelName}`
+                throw new Error(errMsg)
+            } else {
+                logger.debug('update channel by sign Request')
+                configUpdate = signRequest.content.configUpdate;
+                signRequest._responses.forEach((signatureBuffer, index) => {
+                    let proto_config_signature = _configtxProto.ConfigSignature.decode(signatureBuffer);
+                    if (proto_config_signature.signature_header) {
+                        console.log('have header');
+                    }
+                    if (proto_config_signature.signature) {
+                        console.log('have signature');
+                    }
+                    signatures.push(proto_config_signature)
+                })
+                logger.debug("configUpdate");
+                logger.debug(configUpdate)
+                // logger.debug('signatures');
+                // logger.debug(signatures)
+                return Promise.resolve()
+            }
+        })
+        promiseArr.push(p)
+
 
     }
 
     if (!errMsg) {
-        client._userContext = userContext;
-        signatures = signatures || client.signChannelConfig(configUpdate);
-        let request = {
-            // envelope: envelope,
-            config: configUpdate,
-            signatures: signatures,
-            name: channelName,
-            orderer: channels[channelName].getOrderers()[0],
-            txId: client.newTransactionID()
-        };
-        client._userContext = userContext;
-        return client.updateChannel(request).then((response) => {
-            logger.debug(' response ::%j', response);
-            if (response && response.status === 'SUCCESS') {
-                logger.debug('Successfully update the channel.');
-                let response = 'Channel \'' + channelName + '\' updated Successfully'
-                return response;
-            } else {
-                return Promise.reject('Failed to update the channel \'' + channelName + '\' \n\n')
+        console.log(promiseArr)
+        return Promise.all(promiseArr).then(() => {
+            console.log('in the all')
+            client._userContext = userContext;
+            if (signatures.length == 0) {
+                signatures = client.signChannelConfig(configUpdate);
             }
+            let request = {
+                // envelope: envelope,
+                config: configUpdate,
+                signatures: signatures,
+                name: channelName,
+                orderer: channels[channelName].getOrderers()[0],
+                txId: client.newTransactionID()
+            };
+            // console.log('request');
+            // // console.log(request)
 
+            client._userContext = userContext;
+            return client.updateChannel(request).then((response) => {
+                logger.debug(' response ::%j', response);
+                if (response && response.status === 'SUCCESS') {
+                    logger.debug('Successfully update the channel.');
+                    let response = 'Channel \'' + channelName + '\' updated Successfully'
+                    return response;
+                } else {
+                    return Promise.reject('Failed to update the channel \'' + channelName + '\' \n\n')
+                }
+
+            })
         })
+
+
     }
 }
 

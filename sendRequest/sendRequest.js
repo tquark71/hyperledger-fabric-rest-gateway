@@ -8,7 +8,7 @@ var signRequestManger = require('../hyperledgerUtil/signRequest/signRequestManag
 logger.warn(signRequestManger)
 var sendRequest = class {
 
-    constructor({url, body, type, status, uuid, maxTryTimes, timeout}) {
+    constructor({url, body, type, status, uuid, maxTryTimes, meta, timeout}) {
         logger.debug('<========== sendRequest constructor ==========> ')
         this.url = url;
         this.body = body;
@@ -21,6 +21,7 @@ var sendRequest = class {
         this.maxTryTimes = maxTryTimes || 5;
         this.timeout = timeout || 60000;
         this.uuid = uuid;
+        this.meta = meta;
         if (!uuid) {
             let uuid = require('uuid/v4')()
             logger.debug('save send History')
@@ -33,7 +34,8 @@ var sendRequest = class {
                 uuid,
                 status: this.status,
                 maxTryTimes: this.maxTryTimes,
-                timeout: this.timeout
+                timeout: this.timeout,
+                meta
             }).then((sendHistoryInfo) => {
                 logger.debug('save history finish')
                 logger.debug(sendHistoryInfo)
@@ -87,7 +89,7 @@ var sendRequest = class {
             })
         }
         if (this.type == contants.CHANNEL_CONFIG_RESPONSE) {
-            signRequestManger.getOuterSignRequestObj(this.body.uuid).then((signRequest) => {
+            signRequestManger.getOuterSignRequestObj(this.body.uuid, this.meta.toRole).then((signRequest) => {
                 return signRequest.changeRequestStatus('REACH');
             })
         }

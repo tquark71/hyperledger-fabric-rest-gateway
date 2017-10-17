@@ -1,6 +1,6 @@
 npm install
 
-GOPATH=$(pwd)/server/gopath
+GOPATH=$(pwd)/gopath
 echo $GOPATH
-cd server/gopath/src/configtxlator
+cd gopath/src/configtxlator
 go build

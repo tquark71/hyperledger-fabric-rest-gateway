@@ -24,8 +24,9 @@ var init = () => {
     return user.userInit().then(() => {
         logger.info(`hyperledger util user init finish`);
 
-        let orgAmdin = user.getOrgAdmin();
-        eventHub.resumeEventHubFromEventDbForUrl(orgAmdin);
+        let orgAdmin = user.getOrgAdmin();
+        client.setUserContext(orgAdmin)
+        eventHub.resumeEventHubFromEventDbForUrl(orgAdmin);
         logger.info(`hyperledger util initialize all channel start`);
         let promiseArr = [];
 
@@ -48,11 +49,11 @@ var init = () => {
             channelConfig[channelName].peers[myOrgName].forEach((peerObj) => {
                 peerNameArr.push(peerObj.name);
             })
-            eventHub.registerEventWithThreshold('blockEvent', 1, peerNameArr, orgAmdin, (block) => {
+            eventHub.registerEventWithThreshold('blockEvent', 1, peerNameArr, orgAdmin, (block) => {
                 let actionBlock = helper.processBlockToReadAbleJson(block);
                 actionBlock.forEach((txObj) => {
                     if (txObj.type == 'config' && txObj.channelName == channelName) {
-                        let orgAmdin = user.getOrgAdmin();
+                        let orgAdmin = user.getOrgAdmin();
                         client.setUserContext(orgAdmin);
                         channel.initialize();
                     }

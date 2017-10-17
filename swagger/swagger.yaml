@@ -37,10 +37,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/request/channelConfig:
     post:
@@ -91,10 +87,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/request:
     post:
@@ -135,10 +127,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/response:
     post:
@@ -171,10 +159,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/response/accept:
     post:
@@ -192,8 +176,11 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["uuid","user"]
+          required: ["uuid","toRole","user"]
           properties:
+            toRole:
+              type: string
+              example: member
             uuid:
               type: string
             user:
@@ -204,10 +191,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/request/query:
     post:
@@ -255,10 +238,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/response/query:
     post:
@@ -313,10 +292,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /signRequest/response/reject:
     post:
@@ -349,10 +324,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "signRequest"
   /chaincode/install:
     post:
@@ -399,10 +370,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
   /chaincode/data:
     post:
@@ -439,10 +406,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
   /chaincode/instantiate:
     post:
@@ -499,10 +462,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
   /chaincode/upgrade:
     post:
@@ -557,10 +516,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
   /chaincode/invoke:
     post:
@@ -601,10 +556,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
   /chaincode/invokeE:
     post:
@@ -645,10 +596,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
   /chaincode/query:
     post:
@@ -689,10 +636,7 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
+
       x-swagger-router-controller: "chaincode"
 
   /chaincode/queryHistory:
@@ -734,10 +678,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
 
   /chaincode/installed:
@@ -768,10 +708,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "chaincode"
 
   /channel/list:
@@ -802,10 +738,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /channel/info:
@@ -839,10 +771,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /channel/addOrg:
@@ -872,24 +800,23 @@ paths:
               type: "string"
               example: mychannel
             sourceType:
-              enum: ["fs","str"]
+              enum: ["local","str"]
               type: "string"
-              example: fs
+              example: local
+            type:
+              type: "string"
+              enum: ["peer","orderer"]
+              example: peer
+            mspID:
+              type: "string"
+              example: Org3MSP
             opt:
               type: "object"
-              required: ["type",mspID]
               properties:
-                type:
-                  type: "string"
-                  enum: ["peer","order"]
-                  example: peer
                 orgName:
                   type: "string"
                   example: org1.example.com
                   description: "required if sourceType is 'fs',orgName which will be mapped to the folder in /artifacts/crypto-config"
-                mspID:
-                  example: Org3MSP
-                  type: "string"
                 hashFamily:
                   type: "string"
                 hashFunction:
@@ -910,10 +837,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
   /channel/create:
     post:
@@ -950,10 +873,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /channel/instantiated:
@@ -987,10 +906,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
   /channel/join:
     post:
@@ -1020,10 +935,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /channel/config:
@@ -1054,10 +965,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /channel/update:
@@ -1081,6 +988,8 @@ paths:
             channelName:
               type: "string"
               example: mychannel
+            source:
+              example: updateConfigEx.pb
             sourceType:
               type: "string"
               enum: ["local","buffer","signRequest"]
@@ -1093,10 +1002,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
   /channel/init:
     post:
@@ -1126,10 +1031,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "channel"
 
   /block/action:
@@ -1166,10 +1067,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "blockAndTx"
   /block/info:
     post:
@@ -1202,10 +1099,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "blockAndTx"
   /member/list:
     post:
@@ -1232,10 +1125,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "member"
   /member/cert:
     post:
@@ -1262,10 +1151,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "member"
   /member/register:
     post:
@@ -1298,10 +1183,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "member"
   /event/register/ccEvent/url:
     post:
@@ -1346,10 +1227,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "event"
   /event/unregister/ccEvent/url:
     post:
@@ -1394,10 +1271,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "event"
 
   /event/register/blockEvent/url:
@@ -1435,10 +1308,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "event"
   /event/unregister/blockEvent/url:
     post:
@@ -1475,10 +1344,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "event"
   /event/history/all:
     post:
@@ -1511,10 +1376,7 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
+
       x-swagger-router-controller: "event"
   /event/history/failed:
     post:
@@ -1547,10 +1409,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "event"
 
   /monitor/peer/info:
@@ -1579,10 +1437,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/block/trend:
     get:
@@ -1622,10 +1476,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/channel/info:
     get:
@@ -1659,10 +1509,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/block/info:
     get:
@@ -1702,10 +1548,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/tx/last:
     get:
@@ -1745,10 +1587,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/chaincode/info:
     get:
@@ -1789,10 +1627,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/network/info:
     get:
@@ -1814,10 +1648,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/network/status:
     get:
@@ -1839,10 +1669,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /monitor/network/my:
     get:
@@ -1864,10 +1690,6 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
   /login:
     get:
@@ -1894,187 +1716,8 @@ paths:
           description: "SDK response"
           schema:
             $ref: "#/definitions/sdkResoponse"
-        default:
-          description: "Unexpected error"
-          schema:
-            $ref: "#/definitions/inline_response_default"
       x-swagger-router-controller: "monitor"
 definitions:
-  Product:
-    type: "object"
-    properties:
-      product_id:
-        type: "string"
-        description: "Unique identifier representing a specific product for a given\
-          \ latitude & longitude. For example, uberX in San Francisco will have a\
-          \ different product_id than uberX in Los Angeles."
-      description:
-        type: "string"
-        description: "Description of product."
-      display_name:
-        type: "string"
-        description: "Display name of product."
-      capacity:
-        type: "string"
-        description: "Capacity of product. For example, 4 people."
-      image:
-        type: "string"
-        description: "Image URL representing the product."
-  PriceEstimate:
-    type: "object"
-    properties:
-      product_id:
-        type: "string"
-        description: "Unique identifier representing a specific product for a given\
-          \ latitude & longitude. For example, uberX in San Francisco will have a\
-          \ different product_id than uberX in Los Angeles"
-      currency_code:
-        type: "string"
-        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
-      display_name:
-        type: "string"
-        description: "Display name of product."
-      estimate:
-        type: "string"
-        description: "Formatted string of estimate in local currency of the start\
-          \ location. Estimate could be a range, a single number (flat rate) or \"\
-          Metered\" for TAXI."
-      low_estimate:
-        type: "number"
-        description: "Lower bound of the estimated price."
-      high_estimate:
-        type: "number"
-        description: "Upper bound of the estimated price."
-      surge_multiplier:
-        type: "number"
-        description: "Expected surge multiplier. Surge is active if surge_multiplier\
-          \ is greater than 1. Price estimate already factors in the surge multiplier."
-  Profile:
-    type: "object"
-    properties:
-      first_name:
-        type: "string"
-        description: "First name of the Uber user."
-      last_name:
-        type: "string"
-        description: "Last name of the Uber user."
-      email:
-        type: "string"
-        description: "Email address of the Uber user"
-      picture:
-        type: "string"
-        description: "Image URL of the Uber user."
-      promo_code:
-        type: "string"
-        description: "Promo code of the Uber user."
-  Activity:
-    type: "object"
-    properties:
-      uuid:
-        type: "string"
-        description: "Unique identifier for the activity"
-  Activities:
-    type: "object"
-    properties:
-      offset:
-        type: "integer"
-        format: "int32"
-        description: "Position in pagination."
-      limit:
-        type: "integer"
-        format: "int32"
-        description: "Number of items to retrieve (100 max)."
-      count:
-        type: "integer"
-        format: "int32"
-        description: "Total number of items available."
-      history:
-        type: "array"
-        items:
-          $ref: "#/definitions/inline_response_200_3_history"
-  Error:
-    type: "object"
-    properties:
-      code:
-        type: "integer"
-        format: "int32"
-      message:
-        type: "string"
-      fields:
-        type: "string"
-  inline_response_200:
-    properties:
-      product_id:
-        type: "string"
-        description: "Unique identifier representing a specific product for a given\
-          \ latitude & longitude. For example, uberX in San Francisco will have a\
-          \ different product_id than uberX in Los Angeles."
-      description:
-        type: "string"
-        description: "Description of product."
-      display_name:
-        type: "string"
-        description: "Display name of product."
-      capacity:
-        type: "string"
-        description: "Capacity of product. For example, 4 people."
-      image:
-        type: "string"
-        description: "Image URL representing the product."
-  inline_response_default:
-    properties:
-      code:
-        type: "integer"
-        format: "int32"
-      message:
-        type: "string"
-      fields:
-        type: "string"
-  inline_response_200_1:
-    properties:
-      product_id:
-        type: "string"
-        description: "Unique identifier representing a specific product for a given\
-          \ latitude & longitude. For example, uberX in San Francisco will have a\
-          \ different product_id than uberX in Los Angeles"
-      currency_code:
-        type: "string"
-        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
-      display_name:
-        type: "string"
-        description: "Display name of product."
-      estimate:
-        type: "string"
-        description: "Formatted string of estimate in local currency of the start\
-          \ location. Estimate could be a range, a single number (flat rate) or \"\
-          Metered\" for TAXI."
-      low_estimate:
-        type: "number"
-        description: "Lower bound of the estimated price."
-      high_estimate:
-        type: "number"
-        description: "Upper bound of the estimated price."
-      surge_multiplier:
-        type: "number"
-        description: "Expected surge multiplier. Surge is active if surge_multiplier\
-          \ is greater than 1. Price estimate already factors in the surge multiplier."
-  inline_response_200_2:
-    properties:
-      first_name:
-        type: "string"
-        description: "First name of the Uber user."
-      last_name:
-        type: "string"
-        description: "Last name of the Uber user."
-      email:
-        type: "string"
-        description: "Email address of the Uber user"
-      picture:
-        type: "string"
-        description: "Image URL of the Uber user."
-      promo_code:
-        type: "string"
-        description: "Promo code of the Uber user."
   sdkResoponse:
     properties:
       sdkResult:
@@ -2097,29 +1740,6 @@ definitions:
         enrollSecret:
           type: "string"
           example: "87654321"
-  inline_response_200_3_history:
-    properties:
-      uuid:
-        type: "string"
-        description: "Unique identifier for the activity"
-  inline_response_200_3:
-    properties:
-      offset:
-        type: "integer"
-        format: "int32"
-        description: "Position in pagination."
-      limit:
-        type: "integer"
-        format: "int32"
-        description: "Number of items to retrieve (100 max)."
-      count:
-        type: "integer"
-        format: "int32"
-        description: "Total number of items available."
-      history:
-        type: "array"
-        items:
-          $ref: "#/definitions/inline_response_200_3_history"
   endorsement-policy:
     properties:
       identities:
@@ -2143,9 +1763,3 @@ definitions:
           1-of: [
             signed-by: 0
             ]
-securityDefinitions:
-   # X-API-Key: abcdef12345
-   APIKeyHeader:
-     type: apiKey
-     in: header
-     name: X-API-Key

@@ -51,12 +51,12 @@ process.on('beforExit', () => {
 })
 runConfigtxlator()
 
-var addOrgAndGetConfigUpdatePb = (channelName, userContext, provideMethod, opt) => {
+var addOrgAndGetConfigUpdatePb = (channelName, userContext, mspID, type, provideMethod, opt) => {
     return getChannelConfigJsonBuffer(channelName, userContext).then((jsonBuffer) => {
         return extractConfigJson(jsonBuffer)
     }).then((configJson) => {
 
-        let newMspConfig = makeNewMspConfig(provideMethod, opt)
+        let newMspConfig = makeNewMspConfig(provideMethod, type, mspID, opt)
         // console.log(newMspConfig)
         uConfigJson = makeUpdatedConfigJson(configJson, newMspConfig)
         // console.log(uConfigJson)
@@ -102,7 +102,7 @@ var turnConfigJsonToPb = (configJson, writePath) => {
 
     return postToConfigtxlator("encode", "common.Config", new Buffer.from(JSON.stringify(configJson)), writePath)
 }
-var makeNewMspConfig = (provideMethod, opt) => {
+var makeNewMspConfig = (provideMethod, type, mspID, opt) => {
     let mspPath = null
     var cacertStr = null
     var tlscacertStr = null
@@ -110,8 +110,8 @@ var makeNewMspConfig = (provideMethod, opt) => {
     var hashFamily = opt.hashFamily || "SHA2"
     var hashFunction = opt.hashFunction || "SHA256"
     var exampleMspConfig = JSON.parse(fs.readFileSync(path.join(cryptoConfigPath, 'mspConfigEx.json')))
-    if (provideMethod == 'fs') {
-        var type = opt.type
+    if (provideMethod == 'local') {
+        var type = type
         if (type == 'peer') {
             mspPath = path.join(cryptoConfigPath, "peerOrganizations", opt.orgName, "msp")
         } else {
@@ -141,16 +141,16 @@ var makeNewMspConfig = (provideMethod, opt) => {
             throw new Error('Missing cacertStr, tlscacertStr or admincertStr')
         }
     }
-    if (!opt.mspID) {
+    if (!mspID) {
         throw new Error('Missing specify mspID')
     }
-    exampleMspConfig.policies.Admins.policy.value.identities[0].principal.msp_identifier = opt.mspID
-    exampleMspConfig.policies.Readers.policy.value.identities[0].principal.msp_identifier = opt.mspID
-    exampleMspConfig.policies.Writers.policy.value.identities[0].principal.msp_identifier = opt.mspID
+    exampleMspConfig.policies.Admins.policy.value.identities[0].principal.msp_identifier = mspID
+    exampleMspConfig.policies.Readers.policy.value.identities[0].principal.msp_identifier = mspID
+    exampleMspConfig.policies.Writers.policy.value.identities[0].principal.msp_identifier = mspID
     exampleMspConfig.values.MSP.value.config.admins[0] = admincertStr
     exampleMspConfig.values.MSP.value.config.root_certs[0] = cacertStr
     exampleMspConfig.values.MSP.value.config.tls_root_certs[0] = tlscacertStr
-    exampleMspConfig.values.MSP.value.config.name = opt.mspID
+    exampleMspConfig.values.MSP.value.config.name = mspID
     exampleMspConfig.values.MSP.value.config.crypto_config.signature_hash_family = hashFamily
     exampleMspConfig.values.MSP.value.config.crypto_config.identity_identifier_hash_function = hashFunction
     return exampleMspConfig

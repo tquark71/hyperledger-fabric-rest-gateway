@@ -1,5 +1,9 @@
 var hyUtil = require('../../hyperledgerUtil')
 var response = require('../../API/response')
+var fs = require('fs')
+var path = require('path')
+var log4js = require('log4js');
+var logger = log4js.getLogger('swagger/contoller/channel')
 module.exports.getChannels = (req, res, next) => {
     var body = req.swagger.params.request.value
     var user = body.user
@@ -68,17 +72,25 @@ module.exports.addOrg = (req, res, next) => {
     var opt = body.opt
     var sourceType = body.sourceType
     var channelName = body.channelName
+    var mspID = body.mspID;
+    var type = body.type;
     var userObj
-    var errMsg = response.checkParams(body, ["channelName", "opt", "sourceType", "user"])
     if (errMsg != "") {
         response.returnFailed(errMsg, res)
     } else {
         hyUtil.user.matchUserDb(user.enrollID, user.enrollSecret).then((result) => {
             userObj = hyUtil.user.getUser(user.enrollID)
-            return hyUtil.configgen.addOrgAndGetConfigUpdatePb(channelName, userObj, sourceType, opt)
+            return hyUtil.configgen.addOrgAndGetConfigUpdatePb(channelName, userObj, mspID, type, sourceType, opt)
         }).then((configUpdatePb) => {
             logger.debug(configUpdatePb)
-            return hyUtil.channelAPI.updateChannel(channelName, configUpdatePb, userObj)
+            if (opt.writePath) {
+                fs.writeFileSync(path.resolve(__dirname, '../../artifacts/channel', opt.writePath), configUpdatePb)
+            }
+            if (!opt.notSend) {
+                return hyUtil.channelAPI.updateChannel(channelName, configUpdatePb, userObj)
+            } else {
+                return 'make configUpdate success'
+            }
         }).then((result) => {
             response.returnSuccess(result, res)
         }, (err) => {
@@ -216,19 +228,7 @@ module.exports.updateChannel = (req, res, next) => {
     var channelName = body.channelName;
     var sourceType = body.sourceType;
     var source = body.source;
-    if (!channelName) {
-        errMsg += " Missing channelName "
-    }
-    if (!hyUtil.channels[channelName]) {
-        errMsg += " Can't find " + channelName + "channel"
-    }
-    var user = body.user
-    if (!user) {
-        errMsg += "Missing user obj"
-    }
-    if (!configUpdatePath) {
-        errMsg += "Missing configUpdatePath"
-    }
+    var user = body.user;
     if (errMsg != "") {
         response.returnFailed(errMsg, res)
     } else {

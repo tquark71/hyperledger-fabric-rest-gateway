@@ -229,8 +229,13 @@ var innerSignRequest = class {
                         this._changePolicyState(policy);
                     })
                 }
-                this.changeIdentitesState(checkResult[0], checkResult[2] ? 'admin' : 'member', 'ACCPET')
+                logger.debug('push payload')
+                logger.debug(response.payload)
                 this._responses.push(response.payload)
+                logger.debug('all responses')
+                logger.debug(this._responses)
+                this.changeIdentitesState(checkResult[0], checkResult[2] ? 'admin' : 'member', 'ACCPET')
+
             }
         } else if (response.status == 'REJECT') {
             let checkResult = helper.checkSerializedIdentity(channels.getChannel(this.content.channelName), response.responser)
