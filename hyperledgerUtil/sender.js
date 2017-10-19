@@ -93,7 +93,6 @@ Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
     );
 }
 
-hfc.setLogger(logger);
 
 const ENDORSER_TRANSACTION = 3
 var sender = class {
@@ -261,7 +260,8 @@ var sender = class {
                 logger.debug('proposal request')
                 request.txId = this.txID
                 request.targets = [target]
-                client.setUserContext(this.userContext);
+                client.setUserContext(this.userContext,true);
+                helper.addPeerRequestTime(target.name[0],target.name[1]);
                 return Channel.sendTransactionProposal(request, this.channel.getName(), client, this.proposalOpt).then((results) => {
                     logger.debug('proposal result' + results)
                     this.responseTargets.push(target)
@@ -341,9 +341,37 @@ var sender = class {
         return all_good
     }
     static reorderTargets(targets) {
-        //TO DO (1)checkDb to find the send counter
-        //TO DO (2)Based on the counter, reorder the targets array.
-        return Promise.resolve(targets)
+        logger.debug('<====== reorderTargets start =========>');
+        logger.debug('orignial tartgets');
+        logger.debug(targets);
+        let reorderedTargets=[]
+        targets.forEach((target)=>{
+            let requestTime = helper.getPeerRequsetTime(target._name[0],target._name[1]);
+            if(reorderedTargets.length==0){
+                reorderedTargets.push({
+                    target,
+                    requestTime
+                })
+            }else{
+                for(let i = 0 ; i <reorderedTargets.length ; i++){
+                    if(reorderedTargets[i].requestTime < requestTime){
+                        for(let j =reorderedTargets.length - 1; j >=i; j--){
+                            reorderedTargets[j+1] = reorderedTargets[j];
+                        }
+                        reorderedTargets[i] = {
+                            target,
+                            requestTime
+                        }
+                    }
+                }
+            }
+        })
+        reorderedTargets.forEach((target,index)=>{
+            reorderedTargets[index]= target.target;
+        })
+        logger.debug('changed tartgets');
+        logger.debug(reorderedTargets)
+        return Promise.resolve(reorderedTargets)
     }
     static makeProposalResponse(targets, proposalResuls, type) {
         var proposalResponse = []

@@ -6,8 +6,8 @@ var networkConfig = require('../../network-config.json');
 var config = require('../../config')
 var UserDb = require('../../monitor/userDb.json')
 var jwt = require('jsonwebtoken');
-var jwtSecret = config.jwtSecret;
-var myOrgName = config.orgName;
+var jwtSecret = config.gateway.jwtSecret;
+var myOrgName = config.fabric.orgName;
 module.exports.returnPeerInfo = (req, res, next) => {
     var body = req.swagger.params;
 
@@ -20,24 +20,30 @@ module.exports.returnPeerInfo = (req, res, next) => {
         response.returnFailed(e, res)
     })
 }
-module.exports.loginMonitor = (req,res,next)=>{
+module.exports.loginMonitor = (req, res, next) => {
     var body = req.swagger.params;
     var username = body.username.value;
     var password = body.password.value;
     user = UserDb[username];
-    if(user){
-        if(password==user.password){
+    if (user) {
+        if (password == user.password) {
             console.log('login success');
-            let payload = {username:username}
+            let payload = {
+                username: username
+            }
             let token = jwt.sign(
-                payload,jwtSecret,{expiresIn:60*60*1000}
+                payload, jwtSecret, {
+                    expiresIn: 60 * 60 * 1000
+                }
             )
-            response.returnSuccess({token:token},res)
-        }else{
+            response.returnSuccess({
+                token: token
+            }, res)
+        } else {
             response.returnFailed('password not match', res)
         }
 
-    }else{
+    } else {
         response.returnFailed('con not found user', res)
     }
 }
@@ -171,8 +177,8 @@ module.exports.returnAliveState = (req, res, next) => {
 }
 module.exports.returnSelfNetworkConfig = (req, res, next) => {
     var myNetworkConfig = hyUtil.helper.cloneJSON(networkConfig['network-config'][myOrgName])
-    for(let peerName in myNetworkConfig){
-        if(peerName.indexOf('peer')>-1){
+    for (let peerName in myNetworkConfig) {
+        if (peerName.indexOf('peer') > -1) {
             myNetworkConfig[peerName].status = hyUtil.helper.getPeerAliveState(peerName);
         }
     }

@@ -7,22 +7,22 @@ var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../config.json');
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('chaincodeTrigger');
 var channelAPI = require('./channelAPI')
 var Sender = require('./sender')
 var DBs = require('../Db')
 var chaincodeMethod = DBs.chaincodeMethod
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var fs = require('fs')
 var Promise = require('bluebird')
 var path = require('path')
-hfc.setLogger(logger);
 var ORGS = hfc.getConfigSetting('network-config');
 var channelConfig = hfc.getConfigSetting('channelConfig')
 var grpc = require('grpc')
 var _chaincodeDataProto = grpc.load(__dirname + '/protos/peer/chaincode_data.proto').protos
+var eventDefaultTime = config.fabric.eventWaitTime.default
 
 // used for outside added function to process request
 
@@ -30,7 +30,7 @@ var _chaincodeDataProto = grpc.load(__dirname + '/protos/peer/chaincode_data.pro
 function registarTxPromises(ehs, txID, timeout) {
 
     var txPromises = []
-    var expireTime = timeout || 30000
+    var expireTime = timeout || eventDefaultTime
 
     ehs.forEach(function(eh) {
 
@@ -62,7 +62,7 @@ function registarTxPromises(ehs, txID, timeout) {
 function registarTxPromisesAny(ehs, txID, timeout) {
 
     var txPromises = []
-    var expireTime = timeout || 30000
+    var expireTime = timeout || eventDefaultTime
 
     ehs.forEach(function(eh) {
 
@@ -94,7 +94,7 @@ function registarTxPromisesAny(ehs, txID, timeout) {
 
 var installChaincode = function(channelName, chaincodeName, sourceType, chaincodePath, chaincodeVersion, userContext, opt) {
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {
@@ -146,7 +146,7 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
     logger.debug('get tx_id');
     logger.debug(tx_id);
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt.targetList) {
@@ -204,9 +204,9 @@ function sendToCommit(results, txID, channel, userContext, type) {
     var ehs = helper.getOrgEventHubs(userContext, channel.getName())
     var expireTime;
     if (type == 'instantiate' || type == 'upgrade') {
-        expireTime == 180000
+        expireTime == config.fabric.eventWaitTime.instantiate
     } else {
-        expireTime == 30000
+        expireTime == config.fabric.eventWaitTime.invoke
     }
     var txPromises = registarTxPromisesAny(ehs, deployId, expireTime);
     var sendPromise = channel.sendTransaction(request);
@@ -224,7 +224,7 @@ var upgradeChaincode = function(channelName, chaincodeName, chaincodeVersion, fu
     client._userContext = userContext;
     tx_id = client.newTransactionID();
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {
@@ -274,7 +274,7 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
     var proposalResuls = [];
     tx_id = client.newTransactionID();
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {
@@ -398,7 +398,7 @@ var queryChaincode = function(channelName, chaincodeName, fcn, args, userContext
     var queryResponses = []
     // send query
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {
@@ -444,7 +444,7 @@ var queryHistory = function(channelName, chaincodeName, fcn, args, userContext, 
     var queryResponses = []
     // send query
     var targets = []
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {

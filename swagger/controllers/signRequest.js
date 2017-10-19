@@ -1,5 +1,5 @@
-var signRequestManger = require('../../hyperledgerUtil/signRequest/signRequestManager')
 var hyUtil = require('../../hyperledgerUtil')
+var signRequestManger = hyUtil.singRequestManager
 var constants = require('../../constants');
 var path = require('path')
 var configUpdateFolder = path.resolve(__dirname, '../../artifacts/channel')
@@ -20,7 +20,7 @@ module.exports.createChannelConfigSignReqeust = (req, res, next) => {
     var policy = body.policy;
     var opt = body.opt;
     var name = body.name
-    if (sourceType == 'fs') {
+    if (sourceType == 'local') {
         hyUtil
             .user
             .matchUserDb(user.enrollID, user.enrollSecret).then((result) => {
@@ -114,9 +114,10 @@ module.exports.rejectAndResponse = (req, res, next) => {
     var user = body.user;
     var uuid = body.uuid;
     var reason = body.reason;
+    var toRole = body.toRole;
     hyUtil.user.matchUserDb(user.enrollID, user.enrollSecret).then((result) => {
         var userObj = hyUtil.user.getUser(user.enrollID)
-        return signRequestManger.getOuterSignRequestObj(uuid).then((outerSignRequest) => {
+        return signRequestManger.getOuterSignRequestObj(uuid,toRole).then((outerSignRequest) => {
             logger.debug('get outer Request obj success ');
             logger.debug(outerSignRequest)
             return outerSignRequest.rejectRequest(reason, user.enrollID, userObj)

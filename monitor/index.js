@@ -8,9 +8,8 @@ var DBMethods = require('../Db')
 var blockMethod = DBMethods.blockMethod;
 var log4js = require('log4js');
 var logger = log4js.getLogger('monitor');
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
-var myOrgName = config.orgName;
+logger.setLevel(config.gateway.logLevel);
+var myOrgName = config.fabric.orgName;
 var ORGS = hfc.getConfigSetting('network-config');
 var Peer = require('./peer')
 // var monitorIoAPIs = require('./ioAPI')
@@ -22,7 +21,7 @@ var initDB = () => {
     for (let peer in ORGS[myOrgName]) {
         if (peer.indexOf('peer') > -1) {
             logger.info('new monitor peer obj for peer %s', peer)
-            peers[peer] = new Peer(peer, ORGS[myOrgName][peer].requests,io)
+            peers[peer] = new Peer(peer, ORGS[myOrgName][peer].requests, io)
             peers[peer].start()
         }
     }
@@ -36,17 +35,17 @@ var getPeer = (peerName) => {
         return Promise.reject('can not find the peer')
     }
 }
-let allPeerAliveStatus={};
-setInterval(()=>{
+let allPeerAliveStatus = {};
+setInterval(() => {
     let currentAliveStatus = hyperUtil.helper.getAllAliveState()
 
-    if(JSON.stringify(currentAliveStatus)!==JSON.stringify(allPeerAliveStatus)){
+    if (JSON.stringify(currentAliveStatus) !== JSON.stringify(allPeerAliveStatus)) {
         logger.debug('emit aliveStatusChange')
 
         allPeerAliveStatus = hyperUtil.helper.cloneJSON(currentAliveStatus)
-        io.emit('aliveStatusChange',allPeerAliveStatus)
+        io.emit('aliveStatusChange', allPeerAliveStatus)
     }
-},2000)
+}, 2000)
 
 module.exports = {
     initDB: initDB,

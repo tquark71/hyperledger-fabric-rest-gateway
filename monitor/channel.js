@@ -10,7 +10,7 @@ var channelMethod = DBs.channelMethod;
 var blockMethod = DBs.blockMethod;
 var txMethod = DBs.txMethod
 var chaincodeMethod = DBs.chaincodeMethod
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var channel = class {
     constructor(peerName, channelName, io) {
         this.peerName = peerName;
@@ -29,8 +29,8 @@ var channel = class {
             configTimes: 0,
             channelName: channelName,
         }
-        this.diffChaincodes=[],
-        this.blockNumberArray=[]
+        this.diffChaincodes = [],
+        this.blockNumberArray = []
         this.currentHeight = 0;
         this.chaincodes = {};
     }
@@ -64,14 +64,13 @@ var channel = class {
                             return Promise.resolve('next')
                         }
                     } else {
-                        console.log('finish reject')
+                        logger.debug('finish reject')
                         return Promise.reject('finish')
                     }
                 })
             }).then((res) => {
                 rs(txs)
-            }, (e) => {
-
+            }).catch((e) => {
                 //make sure last promise was returned by fullfilling critiria not exception.
                 if (e == 'finish') {
                     rs(txs)
@@ -81,30 +80,33 @@ var channel = class {
             })
         })
     }
-    returnBlockTxsNum(lastNumber){
-        try{
-            lastNumber = parseInt(lastNumber,10)
-        }catch(e){
-
-        }
+    returnBlockTxsNum(lastNumber) {
+        try {
+            lastNumber = parseInt(lastNumber, 10)
+        } catch (e) {}
         logger.debug(`fetch last ${lastNumber} block txs`)
-        let currentHeight = parseInt(this.currentHeight,10)
+        let currentHeight = parseInt(this.currentHeight, 10)
         logger.debug(`current height ${currentHeight}`)
         logger.debug(`fetch from ${currentHeight-lastNumber-1}`)
-        return blockMethod.getBlocks(this.peerName,{
-            channelName:this.channelName,
-            number:{$gt:currentHeight-lastNumber-1}
-        }).then((blocks)=>{
-            let result= []
-            blocks.forEach((block)=>{
-                result.push({blockNumber:block.number,txNum:block.txNum})
+        return blockMethod.getBlocks(this.peerName, {
+            channelName: this.channelName,
+            number: {
+                $gt: currentHeight - lastNumber - 1
+            }
+        }).then((blocks) => {
+            let result = []
+            blocks.forEach((block) => {
+                result.push({
+                    blockNumber: block.number,
+                    txNum: block.txNum
+                })
             })
             return result
         })
     }
     returnBlockInfo(blockNumber) {
         try {
-            blockNumber = parseInt(blockNumber,10)
+            blockNumber = parseInt(blockNumber, 10)
         } catch (e) {}
         return blockMethod.getBlockByNumber(this.peerName, this.channelName, blockNumber)
     }
@@ -151,15 +153,15 @@ var channel = class {
                 let storageHeight = this.summary.blockNum
                 return this.refreshRangeBlocks(storageHeight, nowHeight)
             }).then(() => {
-                logger.info('refresh Range block finish ')
-                let promiseArr = []
-                promiseArr.push(this.updateChannelInfo());
-                promiseArr.push(this.updateChaincodeInfo());
-                return Promise.all(promiseArr)
-            }).then(()=>{
-                logger.info('first track and trace finish');
-                this.trackDone = true;
-            })
+            logger.info('refresh Range block finish ')
+            let promiseArr = []
+            promiseArr.push(this.updateChannelInfo());
+            promiseArr.push(this.updateChaincodeInfo());
+            return Promise.all(promiseArr)
+        }).then(() => {
+            logger.info('first track and trace finish');
+            this.trackDone = true;
+        })
     }
     updateChannelInfo() {
         var channelInfo = hyperUtil.helper.cloneJSON(this.summary)
@@ -168,12 +170,12 @@ var channel = class {
         return channelMethod.updateChannel(this.peerName, channelInfo)
     }
     updateChaincodeInfo() {
-        let promiseArr =[]
+        let promiseArr = []
         for (var chaincodeName in this.chaincodes) {
             let chaincodeInfo = hyperUtil.helper.cloneJSON(this.chaincodes[chaincodeName])
             delete chaincodeInfo._id
             delete chaincodeInfo.__v
-            promiseArr.push( chaincodeMethod.updateChaincodeInfo(this.peerName, chaincodeInfo))
+            promiseArr.push(chaincodeMethod.updateChaincodeInfo(this.peerName, chaincodeInfo))
         }
         return Promise.all(promiseArr)
     }
@@ -182,56 +184,59 @@ var channel = class {
         var blockNumber = block.header.number;
         blockNumber = parseInt(blockNumber, 10)
         logger.debug('event Block Number is ' + blockNumber)
-        logger.debug('current Block Number is ' + (this.currentHeight - 1 ))
+        logger.debug('current Block Number is ' + (this.currentHeight - 1))
 
-        if (this.currentHeight -1 < ((blockNumber) - 1)) {
-            logger.warn('lose block, start to trace')
+        if (this.currentHeight - 1 < ((blockNumber) - 1)) {
+            logger.info('lose block, start to trace')
             this.refreshRangeBlocks(this.currentHeight, blockNumber).then(() => {
                 this.updateChannelInfo()
                 this.updateChaincodeInfo()
             })
         }
-        this.currentHeight = blockNumber+1;
+        this.currentHeight = blockNumber + 1;
         block.header.number = {
             low: blockNumber
         }
         this.refreshBlockAndTx(block).then(() => {
-           let promiseArr = [];
+            let promiseArr = [];
             promiseArr.push(this.updateChannelInfo());
             promiseArr.push(this.updateChaincodeInfo());
-            Promise.all(promiseArr).then(()=>{
-                if(this.trackDone){
-                    this.returnChannelInfo().then((channelInfo)=>{
-                        this.io.emit('channelInfoChange',{
+            Promise.all(promiseArr).then(() => {
+                if (this.trackDone) {
+                    this.returnChannelInfo().then((channelInfo) => {
+                        this.io.emit('channelInfoChange', {
                             peerName: this.peerName,
                             channelName: this.channelName,
-                            channelInfo : channelInfo
+                            channelInfo: channelInfo
                         })
                     })
-                    this.returnLastTxs(20).then((lastTxs)=>{
-                        this.io.emit('lastTxsChange',{peerName:this.peerName,
-                            channelName:this.channelName,
+                    this.returnLastTxs(20).then((lastTxs) => {
+                        this.io.emit('lastTxsChange', {
+                            peerName: this.peerName,
+                            channelName: this.channelName,
                             lastTxs: lastTxs
                         })
+                    }).catch((e)=>{
+
                     })
-                    this.returnBlockTxsNum(20).then((blocksTxs)=>{
+                    this.returnBlockTxsNum(20).then((blocksTxs) => {
                         console.log('blockTxs emit')
-                        this.io.emit('blocksTxsChange',{
+                        this.io.emit('blocksTxsChange', {
                             peerName: this.peerName,
                             channelName: this.channelName,
-                            blocksTxs:blocksTxs
+                            blocksTxs: blocksTxs
                         })
                     })
-                    this.diffChaincodes.forEach((chaincodeName)=>{
-                        this.returnChaincodeInfo(chaincodeName).then((chaincodeInfo)=>{
-                            this.io.emit('chaincodeChange',{
+                    this.diffChaincodes.forEach((chaincodeName) => {
+                        this.returnChaincodeInfo(chaincodeName).then((chaincodeInfo) => {
+                            this.io.emit('chaincodeChange', {
                                 peerName: this.peerName,
                                 channelName: this.channelName,
-                                chaincodeName:this.chaincodeName,
+                                chaincodeName: this.chaincodeName,
                                 chaincodeInfo
                             })
                         })
-                    },this)
+                    }, this)
 
 
 
@@ -257,17 +262,17 @@ var channel = class {
     refreshBlockAndTx(block) {
         var blockNumber = block.header.number.low;
 
-        let verifyNumber = this.blockNumberArray.find((element)=>{
-            return  element == blockNumber;
+        let verifyNumber = this.blockNumberArray.find((element) => {
+            return element == blockNumber;
         })
-        if(verifyNumber){
+        if (verifyNumber) {
             return Promise.resolve('duplicate block number')
-        }else{
+        } else {
             this.blockNumberArray.push(blockNumber);
             console.log('start to refresh block and tx')
             var self = this;
             self.summary.blockNum++;
-            console.log('#### block num : '+self.summary.blockNum )
+            console.log('#### block num : ' + self.summary.blockNum)
             var hash = block.header.data_hash;
             var preHash = block.header.previous_hash;
             let actionBlock = hyperUtil.helper.processBlockToReadAbleJson(block)
@@ -334,7 +339,7 @@ var channel = class {
         } else if (inputs.input[0] == 'deploy' || inputs.input[0] == 'upgrade') {
             chaincodeName = inputs.input[2].chaincodeName.split(':')[0]
         }
-        if(this.traceDone){
+        if (this.traceDone) {
             this.diffChaincodes.push(chaincodeName)
         }
         logger.debug('get chaincode name %s', chaincodeName)
@@ -370,7 +375,7 @@ var channel = class {
             chaincodeInfo.deployTimes++;
             if (blockInfo.number > chaincodeInfo.updateBlockNumber) {
                 chaincodeInfo.version = inputs.input[2].chaincodeName.split(':')[1]
-                logger.warn(inputs.input[3])
+                logger.debug(inputs.input[3])
                 chaincodeInfo.endorsementPolicy = inputs.input[3]
                 chaincodeInfo.updateBlockNumber = blockInfo.number
                 chaincodeInfo.initInput = inputs.input[2].input
@@ -390,9 +395,7 @@ var channel = class {
             logger.info('clean finish')
         })
     }
-    checkPreBlock(blockNum) {
-
-    }
+    checkPreBlock(blockNum) {}
     checkHistory() {
         var currentHash;
         var storageHash;

@@ -5,14 +5,13 @@ var config = require('../config')
 var fs = require('fs')
 var user = require('./user')
 var path = require('path')
-var orgName = config.orgName
+var orgName = config.fabric.orgName
 var ORGS = hfc.getConfigSetting('network-config');
 var helper = require('./helper')
 var channelConfig = hfc.getConfigSetting('channelConfig')
 var log4js = require('log4js');
 var logger = log4js.getLogger('channel');
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 
 var channels = {}
 var initChannel = (channelName) => {
@@ -41,7 +40,7 @@ function addOrderers(channelName) {
             logger.error("can't find the orderer config:" + ordererName)
         } else {
             let opt
-            if (config.mode == 'prod') {
+            if (config.fabric.mode == 'prod') {
                 var caRootsPath = ORGS[ordererName].tls_cacerts;
                 let data = fs.readFileSync(path.join(__dirname, caRootsPath));
                 let caroots = Buffer

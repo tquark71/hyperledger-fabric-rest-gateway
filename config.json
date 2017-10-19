@@ -1,46 +1,63 @@
 {
-    "orgName": "org1",
-    "port": "4001",
-    "keyValueStore": "./volume/fabric1.0/keyValStore",
-    "logPath": "./volume/logs",
-    "eventWaitTime": "30000",
-    "jwtSecret":"secret",
-    "tlsOptions": {
-
-        "tlsEnable": false,
-        "keyFile": "key.pem",
-        "certFile": "cert.pem"
-    },
-
-    "ca": {
-        "admin": {
-            "enrollmentID": "admin",
-            "enrollmentSecret": "adminpw"
-        },
+    "gateway": {
+        "port": "4002",
+        "logLevel": "DEBUG",
+        "logPath": "./volume/logs",
+        "jwtSecret": "secret",
         "tlsOptions": {
-            "trustRoots": [],
-            "verify": false
+            "tlsEnable": false,
+            "keyFile": "key.pem",
+            "certFile": "cert.pem"
+        },
+        "storage": {
+            "type": "mongo",
+            "mongo": {
+                "ip": "localhost",
+                "port": "27017",
+                "username": "",
+                "password": ""
+            }
+        },
+        "swagger": {
+            "hostName": "localhost"
+        },
+        "monitor": {
+            "enabled": true,
+            "interval": 3000
         }
     },
-    "eventHub": {
-        "retryTimes": "10"
-    },
-    "storage": {
-        "type": "mongo",
-        "DbAdress": {
-            "ip": "localhost",
-            "port": "27017",
-            "username": "",
-            "password": ""
+    "fabric": {
+        "orgName": "org2",
+        "mode": "prod",
+        "keyValueStore": {
+            "type": "fs",
+            "fs": {
+                "path":"./volume/fabric/"
+            },
+            "couch":{
+                "url":"http://localhost:5984"
+            }
+        },
+        "eventWaitTime":{
+            "instantiate":300000,
+            "invoke":30000,
+            "joinChannel":30000,
+            "default":30000
+        },
+        "eventHub": {
+            "retryTimes": "10"
+        },
+        "ca": {
+            "admin": {
+                "enrollmentID": "admin",
+                "enrollmentSecret": "adminpw"
+            },
+            "tlsOptions": {
+                "trustRoots": [],
+                "verify": false
+            }
         }
-    },
-    "monitor": {
-        "enabled": true,
-        "interval": 3000
-    },
-    "swagger": {
-        "hostName": "localhost"
-    },
-    "mode": "prod",
-    "logLevel": "DEBUG"
+    }
+
+
 }

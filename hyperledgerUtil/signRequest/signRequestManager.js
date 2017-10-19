@@ -1,11 +1,9 @@
-var client = require('../client')
-var channels = require('../channels')
 var fs = require('fs')
 var util = require('util');
 var path = require('path');
 var user = require('../user')
 var config = require('../../config.json');
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var InnerSignRequest = require('./innerSignRequest');
 var OuterSignRequest = require('./outerSignRequest');
@@ -15,8 +13,7 @@ var _commomProto = grpc.load(path.join(__dirname, '../protos/common/policies.pro
 var _identityProto = grpc.load(path.join(__dirname, '../protos/msp/identities.proto')).msp;
 var _configtxProto = grpc.load(path.join(__dirname, '../protos/common/configtx.proto')).common;
 var _signReqestProto = grpc.load(path.join(__dirname, '../protos/signRequest/signRequest.proto')).common
-var sdkUtils = require('fabric-client/lib/utils')
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var helper = require('../helper')
 var DB = require('../../Db')
 var uuid = require('uuid/v4');
@@ -34,7 +31,9 @@ function receiveSignRequestResponse(response) {
     let uuid = response.uuid;
     return getInnerSignRequestObj(uuid).then((innerSignRequestObj) => {
 
-        return innerSignRequestObj.receiveResponse(response);
+        return innerSignRequestObj.receiveResponse(response).then(()=>{
+            return 'received'
+        })
     })
 }
 function receiveOuterSignRequest(request) {
@@ -45,7 +44,7 @@ function receiveOuterSignRequest(request) {
     }).then((res) => {
         if (res.length > 0) {
             logger.error('Duplicate outer sign request');
-            return 'Duplicate outer sign request'
+            return Promise.reject('Duplicate outer sign request uuid');
         } else {
             logger.debug('new a OuterSignRequest')
             let outerSignRequestObj = new OuterSignRequest(request);
@@ -121,6 +120,7 @@ function getInnerSignRequestObj(requestUuid) {
     }
 }
 function createNewInnerSignRequest(type, name, description, policy, content, userContext, creatorName) {
+
     logger.debug('<===== createNewInnerSignRequest start ==========>')
     let signIdentity = userContext.getSigningIdentity();
     let identity = userContext.getIdentity();
@@ -174,10 +174,11 @@ function createNewInnerSignRequest(type, name, description, policy, content, use
         creatorName,
         signRequestSignatureBytes
     })
-    innerRequset.formateRootPolicy();
     logger.debug('set into collection')
-    innerSignRequestCollection[requestUuid] = innerRequset;
-    return Promise.resolve(requestUuid);
+    return innerRequset.formateRootPolicy().then(()=>{
+        innerSignRequestCollection[requestUuid] = innerRequset;
+        return Promise.resolve(requestUuid);
+    })
 }
 module.exports = {
     getInnerSignRequestObj: getInnerSignRequestObj,

@@ -8,7 +8,7 @@ require('./monitor/passportConfig/passportStragy')(passport);
 require('./custermize')
 var config = require('./config')
 var path = require('path')
-var logPath = path.join(config.logPath, config.orgName)
+var logPath = path.join(config.gateway.logPath, config.fabric.orgName)
 fx.mkdirSync(logPath);
 var https = require('https');
 var bodyParser = require('body-parser');
@@ -23,8 +23,8 @@ var options = {
 };
 var spec = fs.readFileSync(path.join(__dirname, './swagger/swagger.yaml'), 'utf8');
 var swaggerDoc = jsyaml.safeLoad(spec);
-swaggerDoc.host = config.swagger.hostName + ':' + config.port;
-if (config.tlsOptions.tlsEnable) {
+swaggerDoc.host = config.gateway.swagger.hostName + ':' + config.gateway.port;
+if (config.gateway.tlsOptions.tlsEnable) {
     swaggerDoc.schemes = ['https']
 }
 var log4js = require('log4js');
@@ -37,11 +37,11 @@ log4js.configure({
         type: "dateFile",
         pattern: "yyyy-MM-dd.log",
         alwaysIncludePattern: true,
-        filename: path.join(logPath, config.orgName + "-getageway-")
+        filename: path.join(logPath, config.fabric.orgName + "-getageway-")
     }],
     replaceConsole: true
 });
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 
 const resolve = require('path').resolve;
 const app = express();
@@ -64,7 +64,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function(middleware) {
     })
     app.use(cookieParser());
     app.use(session({
-        key: config.orgName + 'cookie',
+        key: config.fabric.orgName + 'cookie',
         secret: '123456789',
         cookie: {
             maxAge: 60 * 60 * 1000
@@ -94,18 +94,13 @@ swaggerTools.initializeMiddleware(swaggerDoc, function(middleware) {
     app.use(middleware.swaggerUi());
     app.use(express.static('public'));
 
-    // setup(app, {
-    //     outputPath: resolve(process.cwd(), 'build'),
-    //     publicPath: '/',
-    // });
 
-
-    var port = config.port;
-    let tlsOptions = config.tlsOptions;
+    var port = config.gateway.port;
+    let tlsOptions = config.gateway.tlsOptions;
     if (tlsOptions.tlsEnable) {
         try {
-            var privateKey = fs.readFileSync(path.join(__dirname, "ssl", config.tlsOptions.keyFile));
-            var cert = fs.readFileSync(path.join(__dirname, "ssl", config.tlsOptions.certFile));
+            var privateKey = fs.readFileSync(path.resolve(__dirname, "ssl", config.gateway.tlsOptions.keyFile));
+            var cert = fs.readFileSync(path.resolve(__dirname, "ssl", config.gateway.tlsOptions.certFile));
             https.createServer({
                 key: privateKey,
                 cert: cert
@@ -120,18 +115,11 @@ swaggerTools.initializeMiddleware(swaggerDoc, function(middleware) {
     // app.listen(port);
     }
     hyperledgerUtil.init().then(() => {
-        if (config.monitor.enabled) {
+        if (config.gateway.monitor.enabled) {
             monitor.initDB()
         }
     })
-    // hyperledgerUtil.user.userInit().then(() => {
-    //     let admin = hyperledgerUtil.user.getOrgAdmin()
 
-    //     hyperledgerUtil.eventHub.resumeEventHubFromEventDbForUrl(admin)
-    //     if (config.monitor.enabled) {
-    //         monitor.initDB()
-    //     }
-    // })
 
 });
 

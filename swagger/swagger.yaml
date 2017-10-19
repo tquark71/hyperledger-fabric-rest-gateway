@@ -15,7 +15,7 @@ paths:
       tags:
       - "SignRequest"
       summary: "send signRequest"
-      description: "send signRequest"
+      description: "API let you send a signRequest to other gateway to get signatures"
       operationId: "sendSignRequest"
       produces:
       - "application/json"
@@ -30,27 +30,32 @@ paths:
           properties:
             uuid:
               type: string
+              description: the uuid of sign request you want to send
             user:
               $ref: "#/definitions/user"
       responses:
         200:
           description: "SDK response"
           schema:
-            $ref: "#/definitions/sdkResoponse"
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: uuid of sign request you send
+                example: 897df2c0-5072-4fad-9126-928e090f544a
       x-swagger-router-controller: "signRequest"
-  /signRequest/request/channelConfig:
+  /signRequest/create/channelConfig:
     post:
       tags:
       - "SignRequest"
       summary: "Create a signRequest"
-      description: "Create a signRequest"
+      description: "Create a signRequest object in your gateway."
       operationId: "createChannelConfigSignReqeust"
       produces:
       - "application/json"
       parameters:
       - name: "request"
         in: "body"
-        description: "install request"
         required: true
         schema:
           type: "object"
@@ -58,19 +63,17 @@ paths:
           properties:
             name:
               type: string
-              example: update-mychannel
+              example: update mychannel
             description:
-              example: I wanne upgrade channel mychannel
+              example: I wanne upgrade channel mychannel, plz accept my request.
               type: string
             channelName:
               example: mychannel
               type: "string"
             sourceType:
-              enum: ["buffer", "fs"]
+              enum: ["buffer", "local"]
               type: "string"
-              example: fs
-            policy:
-              $ref: "#/definitions/endorsement-policy"
+              example: local
             opt:
               type: object
               properties:
@@ -79,6 +82,8 @@ paths:
                 configUpdatePath:
                   type: string
                   example: configUpdateEx.pb
+            policy:
+              $ref: "#/definitions/endorsement-policy"
             user:
               $ref: "#/definitions/user"
               # required: true
@@ -86,10 +91,16 @@ paths:
         200:
           description: "SDK response"
           schema:
-            $ref: "#/definitions/sdkResoponse"
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: uuid of sign request you create
+                example: 897df2c0-5072-4fad-9126-928e090f544a
       x-swagger-router-controller: "signRequest"
   /signRequest/request:
     post:
+      deprecated: true
       tags:
       - "SignRequest"
       summary: "api for receive request"
@@ -115,13 +126,12 @@ paths:
             type:
               example: mychannel
               type: "string"
-            content:
+            contentBytes:
               type: "object"
             signRequestSignatureBytes:
               type: "object"
             user:
               $ref: "#/definitions/user"
-              # required: true
       responses:
         200:
           description: "SDK response"
@@ -130,10 +140,11 @@ paths:
       x-swagger-router-controller: "signRequest"
   /signRequest/response:
     post:
+      deprecated: true
       tags:
       - "SignRequest"
-      summary: "api for receive request"
-      description: "receive a signRequest"
+      summary: "API for internal use"
+      description: "api for receive sign request's response, should be triggered by gateway only"
       operationId: "receiveSignRequestResponse"
       produces:
       - "application/json"
@@ -160,19 +171,18 @@ paths:
           schema:
             $ref: "#/definitions/sdkResoponse"
       x-swagger-router-controller: "signRequest"
-  /signRequest/response/accept:
+  /signRequest/outerRequest/accept:
     post:
       tags:
       - "SignRequest"
-      summary: "api for receive request"
-      description: "receive a signRequest"
+      summary: "api for sign and return a signRequest"
+      description: "trigger this api to sign a signrequest with user in the request body."
       operationId: "signAndResponse"
       produces:
       - "application/json"
       parameters:
       - name: "request"
         in: "body"
-        description: "install request"
         required: true
         schema:
           type: "object"
@@ -181,7 +191,9 @@ paths:
             toRole:
               type: string
               example: member
+              description: Cause the uuid may have the different Role's request, you have to defined which role you wanna sign.
             uuid:
+              description: uuid of signRequest you wanna sign
               type: string
             user:
               $ref: "#/definitions/user"
@@ -190,14 +202,60 @@ paths:
         200:
           description: "SDK response"
           schema:
-            $ref: "#/definitions/sdkResoponse"
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: uuid of sign request you accept
+                example: 897df2c0-5072-4fad-9126-928e090f544a
       x-swagger-router-controller: "signRequest"
-  /signRequest/request/query:
+  /signRequest/outerRequest/reject:
     post:
       tags:
       - "SignRequest"
-      summary: "query signRequest"
-      description: "query a signRequest"
+      summary: "api for reject and return a signRequest"
+      description: "trigger this api to reject a signrequest with user in the request body."
+      operationId: "rejectAndResponse"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        required: true
+        schema:
+          type: "object"
+          required: ["uuid","toRole","user","reason"]
+          properties:
+            toRole:
+              type: string
+              example: member
+              description: Cause the uuid may have the different Role's request, you have to defined which role you wanna sign.
+            uuid:
+              description: uuid of signRequest you wanna sign
+              type: string
+            reason:
+              description: reason you reject this signRequest
+              type: string
+              example: This configUpdate did not make sense.
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: uuid of sign request you reject
+                example: 897df2c0-5072-4fad-9126-928e090f544a
+      x-swagger-router-controller: "signRequest"
+  /signRequest/innerRequest/query:
+    post:
+      tags:
+      - "SignRequest"
+      summary: "query signRequest from DB"
+      description: "Trigger this api can get the record of signRequest, you can add or omit conditions to match what you need"
       operationId: "queryInnerSignRequest"
       produces:
       - "application/json"
@@ -214,44 +272,54 @@ paths:
               type: object
               properties:
                 type:
-                  type: string
-                  example: CHAINCODE_CONFIG_REQUEST
+                  $ref: "#/definitions/sign-request-type"
                 uuid:
                   type: string
                 fullFilled:
                   type: boolean
+                  description: is the signRequest fullfiled the policy
+                  example: false
                 creatorName:
                   type: string
                   example: orgAdmin
+                  description: find the signRequest create by who
                 from:
                   type: string
                   example: "2017-10-15"
+                  description: start of time range - ISO formate
                 to:
                   type: string
+                  example: "2999-10-15"
+                  description: end of time range - ISO formate
             user:
               $ref: "#/definitions/user"
             sortCondition:
                   type: object
-              # required: true
+                  example:
+                    createTime: 1
+                  description: mongo db's json format for reorder the docs
       responses:
         200:
           description: "SDK response"
           schema:
-            $ref: "#/definitions/sdkResoponse"
+            type: object
+            properties:
+              sdk-result:
+                $ref: "#/definitions/sign-request-array"
       x-swagger-router-controller: "signRequest"
-  /signRequest/response/query:
+
+  /signRequest/outerRequest/query:
     post:
       tags:
       - "SignRequest"
       summary: "query outer signRequest"
-      description: "query a outer signRequest"
+      description: "Trigger this api to get out request detail you want, you can add or delete conditions to match your need"
       operationId: "queryOuterSignRequest"
       produces:
       - "application/json"
       parameters:
       - name: "request"
         in: "body"
-        description: "install request"
         required: true
         schema:
           type: "object"
@@ -261,69 +329,52 @@ paths:
               type: object
               properties:
                 type:
-                  type: string
-                  example: CHAINCODE_CONFIG_REQUEST
+                  $ref: "#/definitions/sign-request-type"
                 uuid:
                   type: string
+                  description: condition-filter by uuid
                 status:
                   type: string
                   example: PENDING
+                  description: condition-filter by status
+                name:
+                  type: string
+                  example: update mychannel
+                  description: condition-filter by name
                 fromMspID:
                   type: string
                   example: Org1MSP
+                  description: condition-filter by source MSP
                 toRole:
                   type: string
                   example: member
+                  description: condition-filter by role signRequest wanted
                 signerName:
                   type: string
-                  example: orgAdmin
+                  example: none
+                  description: condition-filter by signer name if existed
                 from:
                   type: string
                   example: "2017-10-15"
+                  description: start of time range - ISO formate
                 to:
                   type: string
+                  example: "2099-10-15"
+                  description: end of time range - ISO formate
+
             user:
               $ref: "#/definitions/user"
             sortCondition:
                   type: object
-              # required: true
+                  description: mongo db's json format for reorder the docs
       responses:
         200:
           description: "SDK response"
           schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "signRequest"
-  /signRequest/response/reject:
-    post:
-      tags:
-      - "SignRequest"
-      summary: "api for receive request"
-      description: "receive a signRequest"
-      operationId: "signAndResponse"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "install request"
-        required: true
-        schema:
-          type: "object"
-          required: ["uuid","user","reason"]
-          properties:
-            uuid:
-              type: string
-            resaon:
-              type: string
-              example: This channelConfig is not make sense
-            user:
-              $ref: "#/definitions/user"
-              # required: true
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
+            type: object
+            properties:
+              sdkResult:
+                $ref: "#/definitions/out-sign-request-array"
       x-swagger-router-controller: "signRequest"
   /chaincode/install:
     post:
@@ -357,14 +408,12 @@ paths:
             chaincodeVersion:
               type: "string"
               example: v1
-              # required: true
             sourceType:
               enum: ["sourceCode", "package"]
               type: "string"
               example: sourceCode
             user:
               $ref: "#/definitions/user"
-              # required: true
       responses:
         200:
           description: "SDK response"
@@ -1740,6 +1789,60 @@ definitions:
         enrollSecret:
           type: "string"
           example: "87654321"
+  sign-request-array:
+    type: array
+    items:
+      type: "object"
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        policy:
+          type: object
+        contentBytes:
+          type: object
+        creatorName:
+          type: string
+        createTime:
+          type: string
+        responses:
+          type: array
+  out-sign-request-array:
+    type: array
+    items:
+      type: "object"
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        signRequestSignatureBytes:
+          type: object
+        contentBytes:
+          type: object
+        toRole:
+          type: string
+        status:
+          type: string
+        fromMspID:
+          type: string
+        signerName:
+          type: string
+        receiveTime:
+          type: string
+  sign-request-type:
+    type: string
+    enum: [CHAINCODE_CONFIG_REQUEST,CHAINCODE_PACKAGE_REQUEST]
+    example: CHAINCODE_CONFIG_REQUEST
   endorsement-policy:
     properties:
       identities:
@@ -1753,13 +1856,19 @@ definitions:
                 name:
                   type: string
                   enum: [member,admin]
-                  example: member
                 mspId:
                   type: string
-                  example: Org2MSP
+        example:
+          - role:
+              name: member
+              mspId: Org2MSP
+          - role:
+              name: member
+              mspId: Org1MSP
       policy:
         type: object
         example:
-          1-of: [
-            signed-by: 0
+          2-of: [
+            signed-by: 0,
+            signed-by: 1
             ]

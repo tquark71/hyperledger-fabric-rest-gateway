@@ -6,13 +6,12 @@ var config = require('../config')
 var log4js = require('log4js');
 var helper = require('./helper')
 var logger = log4js.getLogger('caClient');
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 
-var orgName = config.orgName
+var orgName = config.fabric.orgName
 var client = require('./client')
 var caUrl = ORGS[orgName].ca
-var tlsOptions = config.ca.tlsOptions
+var tlsOptions = config.fabric.ca.tlsOptions
 
 
 var caClient = new copService(helper.transferSSLConfig(caUrl), tlsOptions,

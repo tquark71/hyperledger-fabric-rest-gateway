@@ -10,13 +10,12 @@ var hfc = require('fabric-client');
 var user = require('./user')
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../config.json');
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/channelAPI');
 var helper = require('./helper')
 var constants = require('../constants')
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
 var _policiesProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
 var _chaincodeProto = grpc.load(__dirname + '/protos/peer/chaincode.proto').protos;
@@ -25,7 +24,7 @@ var _commomProto = grpc.load(__dirname + '/protos/common/policies.proto').common
 var _configtxProto = grpc.load(__dirname + '/protos/common/configtx.proto').common;
 var _mspPrincipalProto = grpc.load(__dirname + '/protos/msp/msp_principal.proto').common;
 var ORGS = hfc.getConfigSetting('network-config');
-
+var eventDefaultTime = config.fabric.eventWaitTime.default
 var getChaincodeEnodrsememtPolicy = (peerName, channelName, chaincodeName, userContext) => {
     client._userContext = userContext;
     return getChaincodeData(peerName, channelName, chaincodeName, userContext).then((chaincodeData) => {
@@ -136,7 +135,7 @@ var getBlockActionsByNumber = function(channelName, peerName, blockNumber, userC
     var channel = channels.getChannel(channelName)
     var target;
     target = helper.getPeerByName(peerName);
-    client.setUserContext(userContext);
+    client.setUserContext(userContext,true);
     return channel.queryBlock(parseInt(blockNumber), target).then((response_payloads) => {
         if (response_payloads) {
             return helper.processBlockToReadAbleJson(response_payloads)
@@ -155,7 +154,7 @@ var getBlockByNumber = function(channelName, peerName, blockNumber, userContext)
     try {
         blockNumber = parseInt(blockNumber)
     } catch (e) {}
-    client.setUserContext(userContext)
+    client.setUserContext(userContext,true)
     return channel.queryBlock(blockNumber, target).then((response_payloads) => {
         if (response_payloads) {
 
@@ -172,7 +171,8 @@ var getTransactionByID = function(channeName, peerName, trxnID, userContext) {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     var target = helper.getPeerByName(peerName);
-    client.setUserContext(userContext)
+    client.setUserContext(userContext,true)
+
     return channel.queryTransaction(trxnID, target)
         .then((response_payloads) => {
             if (response_payloads) {
@@ -189,7 +189,7 @@ var getBlockByHash = function(channelName, peerName, hash, userContext) {
     channels.getChannel(channelName);
     var channel = channels[channelName];
     var target = helper.getPeerByName(peerName);
-    client.setUserContext(userContext);
+    client.setUserContext(userContext,true);
     return channel.queryBlockByHash(Buffer.from(hash), target).then((response_payloads) => {
         if (response_payloads) {
             logger.debug(response_payloads);
@@ -205,7 +205,7 @@ var getChainInfo = function(channelName, peerName, userContext) {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     var target = helper.getPeerByName(peerName)
-    client.setUserContext(userContext);
+    client.setUserContext(userContext,true);
 
     return channel.queryInfo(target)
         .then((blockchainInfo) => {
@@ -221,7 +221,7 @@ var getChainInfo = function(channelName, peerName, userContext) {
 
 var getChannels = function(peerName, userContext) {
     var target = helper.getPeerByName(peerName);
-    client.setUserContext(userContext);
+    client.setUserContext(userContext,true);
     return client.queryChannels(target)
         .then((response) => {
             if (response) {
@@ -304,7 +304,7 @@ var joinChannel = function(channelName, userContext) {
                 let txPromise = new Promise((resolve, reject) => {
                     let handle = setTimeout(() => {
                         reject("overTime to join channel")
-                    }, parseInt(10000));
+                    }, parseInt(config.fabric.eventWaitTime.joinChannel||eventDefaultTime));
                     // logger.debug('wait time' + config.eventWaitTime) logger.debug(eh)
                     eh.registerBlockEvent((block) => {
                         clearTimeout(handle);
@@ -344,10 +344,12 @@ var getChannelConfig = (channelName, userContext, writePath) => {
     var channel = channels[channelName]
     client._userContext = userContext;
     return channel.getChannelConfig().then((configEnvolop) => {
+        configEnvolop= configEnvolop.toBuffer()
         if (writePath) {
-            fs.writeFileSync(path.join(__dirname, '../artifacts/', writePath), configEnvolop.toBuffer())
+
+            fs.writeFileSync(path.resolve(__dirname, '../artifacts/', writePath), configEnvolop.toBuffer())
         }
-        return Promise.resolve(configEnvolop.toBuffer())
+        return Promise.resolve(configEnvolop)
     })
 
 }
@@ -361,10 +363,10 @@ var updateChannel = (channelName, sourceType, source, userContext) => {
     var promiseArr = [];
     if (sourceType == 'local') {
         try {
-            configUpdate = fs.readFileSync(path.join(__dirname, '../artifacts/channel/', source))
+            configUpdate = fs.readFileSync(path.resolve(__dirname, '../artifacts/channel/', source))
             promiseArr.push(Promise.resolve())
         } catch (e) {
-            errMsg = "cant not find the configUpdate at " + path.join(__dirname, '../artifacts/channel/', source)
+            errMsg = "cant not find the configUpdate at " + path.resolve(__dirname, '../artifacts/channel/', source)
             throw new Error(errMsg)
         }
     } else if (sourceType == 'buffer') {
@@ -389,12 +391,6 @@ var updateChannel = (channelName, sourceType, source, userContext) => {
                 configUpdate = signRequest.content.configUpdate;
                 signRequest._responses.forEach((signatureBuffer, index) => {
                     let proto_config_signature = _configtxProto.ConfigSignature.decode(signatureBuffer);
-                    if (proto_config_signature.signature_header) {
-                        console.log('have header');
-                    }
-                    if (proto_config_signature.signature) {
-                        console.log('have signature');
-                    }
                     signatures.push(proto_config_signature)
                 })
                 logger.debug("configUpdate");

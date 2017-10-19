@@ -6,14 +6,13 @@ var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../config.json');
-var orgName = config.orgName
+var orgName = config.fabric.orgName
 var log4js = require('log4js');
 var tcpp = require('tcp-ping')
 var logger = log4js.getLogger('util/eventHub');
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var fs = require('fs')
 var path = require('path')
-hfc.setLogger(logger);
 var ORGS = hfc.getConfigSetting('network-config');
 var request = require('request')
 
@@ -167,7 +166,7 @@ var reconnectHandler = () => {
 var resendHandler = () => {
     setInterval(() => {
         for (let peerName in peersEventHub) {
-            eventHistoryMethod.getFailedEventHistorys(peerName, config.eventHub.retryTimes).then((failedHistorys) => {
+            eventHistoryMethod.getFailedEventHistorys(peerName, config.fabric.eventHub.retryTimes).then((failedHistorys) => {
                 failedHistorys.forEach((failedHistory) => {
                     logger.debug(failedHistory)
                     sendPayloadToUrl(peerName, failedHistory.payload, failedHistory.url, failedHistory)
@@ -351,7 +350,7 @@ var eventUrlDbPath = path.join(__dirname, '../Db/EventUrl.json')
 var resumeEventHubFromEventDbForUrl = (userContext) => {
     var peerNameList = helper.getPeerNameList();
     peerNameList.forEach((peerName) => {
-        client.setUserContext(userContext)
+        client.setUserContext(userContext,true)
         eventHubUrlDbMethod.getAllEvents(peerName).then((eventUrls) => {
             eventUrls.forEach((eventUrl) => {
                 if (eventUrl.type == 'ccEvent') {

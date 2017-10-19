@@ -1,5 +1,5 @@
 var Db
 var config = require('../config')
-Db = require('./' + config.storage.type)
+Db = require('./' + config.gateway.storage.type)
 
 module.exports = Db

@@ -8,13 +8,13 @@ var Promise = require('bluebird')
 var channel = require('./channel')
 var DBs = require('../Db')
 var peerMethod = DBs.peerMethod
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var renewInterval = 2000
 var peer = class {
     constructor(peerName, url, io) {
         this.orgAdmin = users.getOrgAdmin()
         this.peerName = peerName;
-        this.orgName = config.orgName;
+        this.orgName = config.fabric.orgName;
         this.peerAlive = true;
         this.peerInfo = {
             peerName: peerName,
@@ -148,7 +148,7 @@ var peer = class {
                 }
 
 
-            }, config.monitor.interval)
+            }, config.gateway.monitor.interval)
         })
 
 

@@ -1,11 +1,11 @@
 var mongoose = require('mongoose');
 var config = require('../../config');
-var myOrgName = config.orgName;
+var myOrgName = config.fabric.orgName;
 var ORGS = require('../../network-config')['network-config']
 var log4js = require('log4js');
 var logger = log4js.getLogger('mongo');
-var port = config.storage.DbAdress.port;
-var ip = config.storage.DbAdress.ip;
+var port = config.gateway.storage.mongo.port;
+var ip = config.gateway.storage.mongo.ip;
 var options = {
     promiseLibrary: require('bluebird'),
     server: {
@@ -19,9 +19,9 @@ var DBs = {}
 for (let peer in ORGS[myOrgName]) {
     if (peer.indexOf('peer') > -1) {
         var uPS = ""
-        if (config.storage.DbAdress.username && config.storage.DbAdress.username != "" && config.storage.DbAdress.password && config.storage.DbAdress.password != "") {
-            uPS = config.storage.DbAdress.username + ':'
-            config.storage.DbAdress.password + '@'
+        if (config.gateway.storage.mongo.username && config.gateway.storage.mongo.username != "" && config.gateway.storage.mongo.password && config.gateway.storage.mongo.password != "") {
+            uPS = config.gateway.storage.mongo.username + ':'
+            config.gateway.storage.mongo.password + '@'
         }
         logger.info('connect db at ' + 'mongodb://' + uPS + ip + ':' + port + '/' + myOrgName + '-' + peer)
         let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + peer, options, () => {

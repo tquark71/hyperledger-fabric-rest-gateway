@@ -7,8 +7,7 @@ var logger = log4js.getLogger('util/configgen');
 
 var hfc = require('fabric-client');
 
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 
 
 const {Writable} = require('stream');

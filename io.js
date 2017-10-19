@@ -12,7 +12,7 @@ function init(server){
             console.log('socket start to auth')
           //get credentials sent by the client
           var token = data.token;
-            jwt.verify(token,config.jwtSecret,(err,decoded)=>{
+            jwt.verify(token,config.gateway.jwtSecret,(err,decoded)=>{
                 if(err){
                     return callback(new Error('token unvaild'))
                 }else{

@@ -2,7 +2,7 @@ var config = require('../config')
 var util = require('util');
 var path = require('path')
 var client = require('./client')
-var caClient = require('./ca')
+var caClient
 var hfc = require('fabric-client');
 var User = require('fabric-client/lib/User.js');
 var fs = require('fs')
@@ -16,13 +16,12 @@ var getUserData = () => {
 var userData = getUserData()
 var ORGS = hfc.getConfigSetting('network-config');
 var Promise = require('bluebird')
-var orgName = config.orgName
+var orgName = config.fabric.orgName
 var mspid = ORGS[orgName].mspid
 var fs = require('fs')
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/user');
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 var users = {}
 var orgAdminEnrollID = "orgAdmin"
 var caAdminEnrollID = "caAdmin"
@@ -40,7 +39,6 @@ function readAllFiles(dir) {
 var enrollOrgAdmin = function() {
     var admin = ORGS[orgName].admin;
     var keyPath = path.join(__dirname, ORGS[orgName].admin.key);
-    console.log(keyPath)
     var keyPEM = readAllFiles(keyPath)[0]
     var certPath = path.join(__dirname, ORGS[orgName].admin.cert);
     var certPEM = readAllFiles(certPath)[0];
@@ -71,14 +69,14 @@ var enrollOrgAdmin = function() {
 
 };
 var enrollCaAdmin = function() {
-    var username = config.ca.admin.enrollmentID
-    var password = config.ca.admin.enrollmentSecret
+    var username = config.fabric.ca.admin.enrollmentID
+    var password = config.fabric.ca.admin.enrollmentSecret
     var member;
     // clearing the user context before switching
 
 
     return client
-        .getUserContext(config.ca.admin.enrollmentID, true)
+        .getUserContext(config.fabric.ca.admin.enrollmentID, true)
         .then((user) => {
             if (user) {
                 logger.info('Successfully loaded adminuser from persistence');
@@ -225,6 +223,7 @@ var registerAndEnrollUser = function(userName, password, adminUserContext) {
 
 
 var innerRegisterAndEnrollMethod = (userName, password, adminUserContext) => {
+    let enrollmentSecret = password;
     logger.debug('innerRegisterAndEnrollMethod')
     return caClient.register({
         enrollmentID: userName,
@@ -255,13 +254,16 @@ var innerRegisterAndEnrollMethod = (userName, password, adminUserContext) => {
         }
         logger.info(userName + ' enrolled successfully');
         member = new User(userName);
+        member.setCryptoSuite(client.getCryptoSuite())
         member._enrollmentSecret = enrollmentSecret;
         return member.setEnrollment(message.key, message.certificate, mspid);
     }).then(() => {
-        client.setUserContext(member);
+        client.setUserContext(member,false);
         users[userName] = member
 
         return member;
+    }).catch((e)=>{
+        logger.error(e)
     });
 }
 var getRegisteredUsersync = function(username) {
@@ -298,9 +300,12 @@ var matchUserDb = (enrollmentID, enrollmentSecret) => {
 }
 
 var userInit = () => {
+    caClient = require('./ca')
     logger.info('start to init user objs')
 
-    adminPromise = [enrollCaAdmin(), enrollOrgAdmin()]
+    adminPromise = [enrollCaAdmin().then(()=>{
+       return enrollOrgAdmin()
+    }) ]
 
     return Promise.all(adminPromise).then(
         () => {

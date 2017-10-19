@@ -8,12 +8,12 @@ var user = require('../user')
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../../config.json');
 
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/innerSignRequest');
 
 var helper = require('../helper');
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
 var _signReqestProto = grpc.load(path.join(__dirname, '../protos/signRequest/signRequest.proto')).common
 var _identityProto = grpc.load(path.join(__dirname, '../protos/msp/identities.proto')).msp;
@@ -187,7 +187,7 @@ var innerSignRequest = class {
             logger.debug('checkResult')
             logger.debug(checkResult)
             if (!checkResult) {
-                throw new Error('Response check failed')
+                return Promise.reject('Response check failed')
             } else {
                 let signByNumber;
                 let pSignByNumber;
@@ -246,7 +246,7 @@ var innerSignRequest = class {
                 this._policy.identities.reason = response.payloadl
             }
         }
-        this._updateRequest()
+        return this._updateRequest()
 
 
 
@@ -412,11 +412,13 @@ var innerSignRequest = class {
         })
         this._addCountIndexForNof(policy);
         this._formatPolicy(policy, [0])
-        this._saveRequest();
+        return this._saveRequest();
     }
     _formatPolicy(policy, indexArr) {
+        var findType = false;
         for (let key in policy) {
             if (key.indexOf('-of') > -1) {
+                findType = true;
                 policy.type = 'n-of';
                 this._addCountIndexForNof(policy[key]);
                 policy[key].forEach((subPolicy, index) => {
@@ -425,8 +427,13 @@ var innerSignRequest = class {
                     this._formatPolicy(subPolicy, subIndexArr);
                 })
             } else if (key.indexOf('signed-by') > -1) {
+                findType = true;
+
                 policy.type = 'sign-by';
             }
+        }
+        if(!findType){
+            throw new Error()
         }
         policy.indexArr = indexArr;
 

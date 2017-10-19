@@ -6,11 +6,10 @@ var fs = require("fs")
 var util = require('util')
 var path = require('path')
 var tcpp = require('tcp-ping');
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('helper');
-logger.setLevel(config.logLevel);
-hfc.setLogger(logger);
+logger.setLevel(config.gateway.logLevel);
 var channelConfig = hfc.getConfigSetting('channelConfig')
 var ORGS = hfc.getConfigSetting('network-config');
 var grpc = require('grpc');
@@ -90,6 +89,7 @@ var getPeerByName = (peerName, orgName) => {
         } else {
             let opt = getOpt(orgName, peerName)
             peer = client.newPeer(transferSSLConfig(ORGS[orgName][peerName].requests), opt);
+            peer._name = [orgName,peerName];
             setPeerCach(peerName, orgName, peer)
             return peer
 
@@ -408,7 +408,7 @@ function getOrgEventHubs(userContext, channelName, orgName) {
 function getEventHubByName(peerName, userContext) {
     if (checkPeerNameExist(peerName, myOrgName)) {
         logger.debug('start to get %s evenhub', peerName)
-        client.setUserContext(userContext);
+        client.setUserContext(userContext,true);
         let eh = client.newEventHub();
         let opt = getOpt(myOrgName, peerName)
         logger.debug('event hub url is ' + ORGS[myOrgName][peerName]['events'])
@@ -425,7 +425,7 @@ function getEventHubByIp(ip, userContext) {
     for (let peer in ORGS[myOrgName]) {
         if (peer.indexOf('peer') > -1) {
             if (ORGS[myOrgName][peer].events.indexOf(ip) > -1) {
-                client.setUserContext(userContext);
+                client.setUserContext(userContext,true);
                 let eh = client.newEventHub();
                 let opt = getOpt(myOrgName, peer)
                 eh.setPeerAddr(transferSSLConfig(ORGS[myOrgName][peer]['events']), opt)
@@ -475,7 +475,7 @@ var closeEhs = function(ehs) {
 function getOpt(orgName, peerName) {
     let opt = {}
     try {
-        if (config.mode == "prod") {
+        if (config.fabric.mode == "prod") {
             let data = fs.readFileSync(path.join(__dirname, ORGS[orgName][peerName]['tls_cacerts']));
             opt = {
                 pem: Buffer
@@ -510,7 +510,7 @@ var getOrgNameByMspID = (mspID) => {
 }
 var transferSSLConfig = (url) => {
 
-    if (config.mode == "dev") {
+    if (config.fabric.mode == "dev") {
         url = url.replace(/https\:/g, 'http:')
         url = url.replace(/grpcs\:/g, 'grpc:')
     }

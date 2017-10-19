@@ -61,8 +61,8 @@ const addProdMiddlewares = (app, options) => {
  */
 module.exports = (app, options) => {
     const isProd = process.env.NODE_ENV === 'production';
-
     if (isProd) {
+        console.log('production mode')
         addProdMiddlewares(app, options);
     } else {
         const webpackConfig = require('../../internals/webpack/webpack.dev.babel');

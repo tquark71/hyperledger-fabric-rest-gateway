@@ -6,7 +6,7 @@ var ORGS = hfc.getConfigSetting('network-config');
 var channelConfig = hfc.getConfigSetting('channelConfig');
 var log4js = require('log4js');
 var logger = log4js.getLogger('hyperledgerUtil');
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var chaincodeTrigger = require('./chaincodeTrigger')
 var user = require('./user')
 var channelAPI = require('./channelAPI')
@@ -16,16 +16,18 @@ var configgen = require('./configgen')
 var eventHub = require('./eventHub')
 var helper = require('./helper')
 var requestPlugin = require('./requestPlugin');
-var myOrgName = config.orgName;
-
+var myOrgName = config.fabric.orgName;
+var singRequestManager = require('./signRequest/signRequestManager')
 //var client = require('./client')
 
 var init = () => {
-    return user.userInit().then(() => {
+    return client.clientInit().then(()=>{
+        return user.userInit()
+    }).then(() => {
         logger.info(`hyperledger util user init finish`);
 
         let orgAdmin = user.getOrgAdmin();
-        client.setUserContext(orgAdmin)
+        client.setUserContext(orgAdmin,true)
         eventHub.resumeEventHubFromEventDbForUrl(orgAdmin);
         logger.info(`hyperledger util initialize all channel start`);
         let promiseArr = [];
@@ -54,13 +56,13 @@ var init = () => {
                 actionBlock.forEach((txObj) => {
                     if (txObj.type == 'config' && txObj.channelName == channelName) {
                         let orgAdmin = user.getOrgAdmin();
-                        client.setUserContext(orgAdmin);
+                        client.setUserContext(orgAdmin,true);
                         channel.initialize();
                     }
                 })
             })
         }
-        return Promise.all(promiseArr, (res) => {
+        return Promise.all(promiseArr).then((res) => {
             logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
             logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
 
@@ -83,5 +85,6 @@ module.exports = {
     eventHub: eventHub,
     helper: helper,
     requestPlugin: requestPlugin,
+    singRequestManager:singRequestManager,
     init: init
 }

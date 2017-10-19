@@ -66,7 +66,6 @@ module.exports.chaincodeInstantiate = function(req, res, next) {
             .then((result) => {
 
                 var userObj = hyUtil.user.getUser(user.enrollID)
-                hyUtil.client.setUserContext(userObj);
                 return hyUtil.channels[channelName].initialize()
             }).then((result) => {
             var userObj = hyUtil.user.getUser(user.enrollID)

@@ -6,11 +6,11 @@ var path = require('path')
 var user = require('../user')
 var config = require('../../config.json');
 
-var myOrgName = config.orgName
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/innerSignRequest');
 var helper = require('../helper');
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
 var _identityProto = grpc.load(path.join(__dirname, '../protos/msp/identities.proto')).msp;
 var _commomProto = grpc.load(path.join(__dirname, '../protos/common/policies.proto')).common;
@@ -200,7 +200,7 @@ var outerSignRequest = class {
         if (toRoleCheckPassed) {
             let sendRequest
             if (this.type = constants.CHANNEL_CONFIG_REQUEST) {
-                client.setUserContext(userContext);
+                client.setUserContext(userContext,true);
                 let proto_config_signature = client.signChannelConfig(this.content.configUpdate);
                 body.payload = proto_config_signature.toBuffer();
                 sendRequest = new SendRequest({

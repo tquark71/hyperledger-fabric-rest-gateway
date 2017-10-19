@@ -1,7 +1,7 @@
 var config = require('../config')
 var log4js = require('log4js');
 var logger = log4js.getLogger('respones');
-logger.setLevel(config.logLevel);
+logger.setLevel(config.gateway.logLevel);
 
 
 
