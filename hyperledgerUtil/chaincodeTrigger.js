@@ -183,10 +183,10 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
         client._userContext = userContext;
         return channel.sendInstantiateProposal(request)
     }).then((results) => {
-        return resultHandle('instantiate', results, channel, tx_id, userContext)
+        return resultHandle('instantiate', results, channel, targets, tx_id, userContext)
     })
 };
-function resultHandle(type, results, channel, txID, userContext) {
+function resultHandle(type, results, channel, targets, txID, userContext) {
     let proposalResuls = [];
     if (type == 'invoke') {
         results[0].forEach((response) => {
@@ -322,26 +322,7 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
         client._userContext = userContext;
         return channel.sendTransactionProposal(request)
     }).then((results) => {
-        return resultHandle('invoke', results, channel, tx_id, userContext)
-    // results[0].forEach((response) => {
-    //     if (response.response) {
-    //         proposalResuls.push(response.response.payload.toString())
-    //     }
-    // })
-    // var compareResult = Sender.checkProposal(channel, results)
-    // if (compareResult) {
-    //     return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
-    //         return proposalResuls[0]
-    //     })
-    // } else {
-    //     let response = Sender.makeProposalResponse(targets, results[0], 'invoke')
-    //     logger.debug(compareResult)
-    //     response.push({
-    //         compareResult: compareResult
-    //     })
-    //     logger.error(response)
-    //     return Promise.reject(response)
-    // }
+        return resultHandle('invoke', results, channel, targets, tx_id, userContext)
     })
 
 };
@@ -378,30 +359,30 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
 
         })
     }).then((results) => {
-        return resultHandle('invoke', results, channel, tx_id, userContext)
-    // logger.debug('results is ' + results)
-    // logger.debug('in the finish section')
-    // results[0].forEach((response) => {
-    //     if (response.response) {
-    //         proposalResuls.push(response.response.payload.toString())
-    //     }
-    // })
-    // compareResult = Sender.checkProposal(channel, results)
-    // if (compareResult) {
-    //     let response = sender.makeProposalResponse()
-    //     response.push({
-    //         compareResult: compareResult
-    //     })
-    //     return Promise.reject(JSON.stringify(response))
-    // } else {
-    //     return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
-    //         if (checkAllResult(proposalResuls)) {
-    //             return proposalResuls[0]
-    //         } else {
-    //             return "tx has commite but some peer's response not the same" + proposalResuls
-    //         }
-    //     })
-    // }
+
+        logger.debug('results is ' + results)
+        logger.debug('in the finish section')
+        results[0].forEach((response) => {
+            if (response.response) {
+                proposalResuls.push(response.response.payload.toString())
+            }
+        })
+        compareResult = Sender.checkProposal(channel, results)
+        if (compareResult) {
+            let response = sender.makeProposalResponse()
+            response.push({
+                compareResult: compareResult
+            })
+            return Promise.reject(JSON.stringify(response))
+        } else {
+            return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
+                if (checkAllResult(proposalResuls)) {
+                    return proposalResuls[0]
+                } else {
+                    return "tx has commite but some peer's response not the same" + proposalResuls
+                }
+            })
+        }
     })
 }
 var getChaincodePolicy = (channelName, chaincodeName, userContext) => {
@@ -485,7 +466,6 @@ var queryHistory = function(channelName, chaincodeName, fcn, args, userContext, 
         } else {
             targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
         }
-    // TO DO use endorsePolicy to assign target
     }
     var request = {
         targets: targets,
