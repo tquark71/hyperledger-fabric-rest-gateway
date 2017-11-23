@@ -344,7 +344,7 @@ var sender = class {
             if (channel != null || onePass) {
                 logger.debug(proposalResponses)
                 if (!channel.compareProposalResponseResults(proposalResponses)) {
-                    return 'proposal response are not the same';
+                    return false;
                 }
             }
             return all_good
@@ -416,7 +416,7 @@ var sender = class {
             } else {
                 response.response = proposalResuls[targetIndx].toString()
             }
-            console.log(proposalResponse)
+            logger.warn(proposalResponse)
             proposalResponse.push(response)
         }
 

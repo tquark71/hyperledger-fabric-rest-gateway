@@ -39,15 +39,13 @@ function registarTxPromises(ehs, txID, timeout) {
 
         let txPromise = new Promise((resolve, reject) => {
             let handle = setTimeout(() => {
-                eh.disconnect();
+                eh.unregisterTxEvent(txID);
                 reject();
             }, expireTime);
             eh.registerTxEvent(txID, (tx, code) => {
                 logger.info('The chaincode  transaction has been send to peer ' + eh._ep._endpoint.addr);
                 clearTimeout(handle);
                 eh.unregisterTxEvent(txID);
-                eh.disconnect();
-
                 if (code !== 'VALID') {
                     logger.error('The chaincode  transaction was invalid, code = ' + code);
                     reject();
@@ -71,14 +69,13 @@ function registarTxPromisesAny(ehs, txID, timeout) {
 
         let txPromise = new Promise((resolve, reject) => {
             let handle = setTimeout(() => {
-                eh.disconnect();
+                eh.unregisterTxEvent(txID);
                 reject();
             }, expireTime);
             eh.registerTxEvent(txID, (tx, code) => {
                 logger.info('The chaincode  transaction has been committed on peer ' + eh._ep._endpoint.addr);
                 clearTimeout(handle);
                 eh.unregisterTxEvent(txID);
-                eh.disconnect();
 
                 if (code !== 'VALID') {
                     logger.error('The chaincode  transaction was invalid, code = ' + code);
@@ -186,24 +183,37 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
         client._userContext = userContext;
         return channel.sendInstantiateProposal(request)
     }).then((results) => {
-        var compareResult;
-        compareResult = Sender.checkProposal(channel, results)
-        logger.debug('checking instantiate proposal')
-        if (typeof compareResult != 'string') {
-            return sendToCommit(results, tx_id, channel, userContext, 'instantiate').then(() => {
-                return util.format("Initiatiate chaincode %s at channel %s successful", chaincodeName, channelName)
-            })
-
-        } else {
-            let response = Sender.makeProposalResponse(targets, results[0], 'instantiate')
-            response.push({
-                compareResult
-            })
-            logger.error(response)
-            return Promise.reject(response)
-        }
+        return resultHandle('instantiate', results, channel, tx_id, userContext)
     })
 };
+function resultHandle(type, results, channel, txID, userContext) {
+    let proposalResuls = [];
+    if (type == 'invoke') {
+        results[0].forEach((response) => {
+            if (response.response) {
+                proposalResuls.push(response.response.payload.toString())
+            }
+        })
+    }
+    let compareResult = Sender.checkProposal(channel, results)
+    logger.debug(`checking ${type} proposal`)
+    if (compareResult) {
+        return sendToCommit(results, txID, channel, userContext, type).then(() => {
+            if (type == 'instantiate' || type == 'upgrade') {
+                return util.format(`${type} successful`)
+            } else {
+                return proposalResuls[0]
+            }
+        })
+    } else {
+        let response = Sender.makeProposalResponse(targets, results[0], type)
+        response.push({
+            compareResult
+        })
+        logger.error(response)
+        return Promise.reject(response)
+    }
+}
 //internal method, after check proposal, use this function to send to orderer.
 function sendToCommit(results, txID, channel, userContext, type) {
     client._userContext = userContext;
@@ -267,9 +277,9 @@ var upgradeChaincode = function(channelName, chaincodeName, chaincodeVersion, fu
 
         compareResult = Sender.checkProposal(channel, results)
         logger.debug('checking upgrade proposal')
-        if (typeof compareResult != 'string') {
+        if (compareResult) {
             return sendToCommit(results, tx_id, channel, userContext, 'upgrade').then(() => {
-                return util.format("Initiatiate chaincode %s at channel %s successful", chaincodeName, channelName)
+                return util.format("upgrade chaincode %s at channel %s successful", chaincodeName, channelName)
             })
         } else {
             let response = Sender.makeProposalResponse(targets, results[0], 'instantiate')
@@ -312,33 +322,26 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
         client._userContext = userContext;
         return channel.sendTransactionProposal(request)
     }).then((results) => {
-        results[0].forEach((response) => {
-            // logger.debug(response.response.payload.encodeJSON());
-            // logger.debug(response.encodeJSON())
-            if (response.response) {
-                proposalResuls.push(response.response.payload.toString())
-            }
-        })
-        var compareResult = Sender.checkProposal(channel, results)
-        if (typeof compareResult != 'string') {
-            return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
-                if (checkAllResult(proposalResuls)) {
-                    return proposalResuls[0]
-                } else {
-                    return "tx has commite but some peer's response not the same" + proposalResuls
-                }
-            }).catch((e) => {
-                return Promise.reject(e)
-            })
-        } else {
-            let response = Sender.makeProposalResponse(targets, results[0], 'invoke')
-            console.log(compareResult)
-            response.push({
-                compareResult: compareResult
-            })
-            logger.error(response)
-            return Promise.reject(response)
-        }
+        return resultHandle('invoke', results, channel, tx_id, userContext)
+    // results[0].forEach((response) => {
+    //     if (response.response) {
+    //         proposalResuls.push(response.response.payload.toString())
+    //     }
+    // })
+    // var compareResult = Sender.checkProposal(channel, results)
+    // if (compareResult) {
+    //     return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
+    //         return proposalResuls[0]
+    //     })
+    // } else {
+    //     let response = Sender.makeProposalResponse(targets, results[0], 'invoke')
+    //     logger.debug(compareResult)
+    //     response.push({
+    //         compareResult: compareResult
+    //     })
+    //     logger.error(response)
+    //     return Promise.reject(response)
+    // }
     })
 
 };
@@ -375,29 +378,30 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
 
         })
     }).then((results) => {
-        logger.debug('results is ' + results)
-        logger.debug('in the finish section')
-        results[0].forEach((response) => {
-            if (response.response) {
-                proposalResuls.push(response.response.payload.toString())
-            }
-        })
-        compareResult = Sender.checkProposal(channel, results)
-        if (typeof compareResult == 'string') {
-            let response = sender.makeProposalResponse()
-            response.push({
-                compareResult: compareResult
-            })
-            return Promise.reject(JSON.stringify(response))
-        } else {
-            return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
-                if (checkAllResult(proposalResuls)) {
-                    return proposalResuls[0]
-                } else {
-                    return "tx has commite but some peer's response not the same" + proposalResuls
-                }
-            })
-        }
+        return resultHandle('invoke', results, channel, tx_id, userContext)
+    // logger.debug('results is ' + results)
+    // logger.debug('in the finish section')
+    // results[0].forEach((response) => {
+    //     if (response.response) {
+    //         proposalResuls.push(response.response.payload.toString())
+    //     }
+    // })
+    // compareResult = Sender.checkProposal(channel, results)
+    // if (compareResult) {
+    //     let response = sender.makeProposalResponse()
+    //     response.push({
+    //         compareResult: compareResult
+    //     })
+    //     return Promise.reject(JSON.stringify(response))
+    // } else {
+    //     return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
+    //         if (checkAllResult(proposalResuls)) {
+    //             return proposalResuls[0]
+    //         } else {
+    //             return "tx has commite but some peer's response not the same" + proposalResuls
+    //         }
+    //     })
+    // }
     })
 }
 var getChaincodePolicy = (channelName, chaincodeName, userContext) => {

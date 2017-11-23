@@ -216,11 +216,11 @@ var channel = class {
                             channelName: this.channelName,
                             lastTxs: lastTxs
                         })
-                    }).catch((e)=>{
+                    }).catch((e) => {
 
                     })
                     this.returnBlockTxsNum(20).then((blocksTxs) => {
-                        console.log('blockTxs emit')
+                        logger.debug('blocksTxsChange emit')
                         this.io.emit('blocksTxsChange', {
                             peerName: this.peerName,
                             channelName: this.channelName,
@@ -231,7 +231,7 @@ var channel = class {
                     logger.debug(this.diffChaincodes)
                     this.diffChaincodes.forEach((chaincodeName) => {
                         this.returnChaincodeInfo(chaincodeName).then((chaincodeInfo) => {
-                            console.log('chaincodeInfoChange emit')
+                            logger.debug('chaincodeInfoChange emit')
                             this.io.emit('chaincodeInfoChange', {
                                 peerName: this.peerName,
                                 channelName: this.channelName,
@@ -240,7 +240,7 @@ var channel = class {
                             })
                         })
                     }, this)
-                    this.diffChaincodes=[];
+                    this.diffChaincodes = [];
 
 
 
@@ -265,7 +265,7 @@ var channel = class {
     }
     refreshBlockAndTx(block) {
         var blockNumber = block.header.number.low;
-        if(!blockNumber){
+        if (blockNumber == undefined) {
             blockNumber = block.header.number;
         }
         let verifyNumber = this.blockNumberArray.find((element) => {
@@ -275,15 +275,15 @@ var channel = class {
             return Promise.resolve('duplicate block number')
         } else {
             this.blockNumberArray.push(blockNumber);
-            console.log('start to refresh block and tx')
+            logger.debug('start to refresh block and tx')
             var self = this;
             self.summary.blockNum++;
-            console.log('#### block num : ' + self.summary.blockNum)
+            logger.debug('#### block num : ' + self.summary.blockNum)
             var hash = block.header.data_hash;
             var preHash = block.header.previous_hash;
             let actionBlock = hyperUtil.helper.processBlockToReadAbleJson(block)
             logger.debug('process block to json')
-            logger.debug(JSON.stringify(actionBlock,null,2));
+            logger.debug(JSON.stringify(actionBlock, null, 2));
             var blockInfo = {
                 txNum: 0,
                 validNum: 0,
@@ -306,7 +306,7 @@ var channel = class {
                     endorseInput: [],
                     blockNumber: blockNumber
                 }
-                txInfo.valid = channel.checkTxVaild(block, txInfo.txID)
+                txInfo.valid = channel.checkTxVaild(tx.validCode)
                 blockInfo.txNum++;
                 self.summary.txNum++;
                 if (txInfo.valid) {
@@ -341,22 +341,22 @@ var channel = class {
         var chaincodeName;
         var chaincodeInfo;
 
-        if (inputs.input[0] == 'invoke') {
-            chaincodeName = inputs.chaincodeName.split(':')[0];
-        } else if (inputs.input[0] == 'deploy' || inputs.input[0] == 'upgrade') {
-            logger.warn(JSON.stringify(inputs,null,2));
+        if (inputs.input[0] == 'deploy' || inputs.input[0] == 'upgrade') {
+            logger.warn(JSON.stringify(inputs, null, 2));
             chaincodeName = inputs.input[2].chaincodeName.split(':')[0]
+        } else {
+            chaincodeName = inputs.chaincodeName.split(':')[0];
         }
         // if track and trace step is finished, start to emit chaincode event
         if (this.trackDone) {
             //check chaincode emit list is duplicated?
-            let existed =false;
-            for(let oChaincodeName of this.diffChaincodes){
-                if(chaincodeName == oChaincodeName){
+            let existed = false;
+            for (let oChaincodeName of this.diffChaincodes) {
+                if (chaincodeName == oChaincodeName) {
                     existed = true;
                 }
             }
-            if(!existed){
+            if (!existed) {
                 this.diffChaincodes.push(chaincodeName)
             }
         }
@@ -384,10 +384,7 @@ var channel = class {
         } else {
             chaincodeInfo.unValidNum++;
         }
-        if (inputs.input[0] == 'invoke') {
-            self.summary.invokeTimes++;
-            chaincodeInfo.invokeTimes++;
-        } else {
+        if (inputs.input[0] == 'deploy' || inputs.input[0] == 'upgrade') {
             // if the tx is update and the block is bigger than record, update the chaincode info
             self.summary.deployTimes++;
             chaincodeInfo.deployTimes++;
@@ -398,6 +395,9 @@ var channel = class {
                 chaincodeInfo.updateBlockNumber = blockInfo.number
                 chaincodeInfo.initInput = inputs.input[2].input
             }
+        } else {
+            self.summary.invokeTimes++;
+            chaincodeInfo.invokeTimes++;
         }
     }
     cleanDb() {
@@ -455,9 +455,14 @@ var channel = class {
         })
 
     }
-    static checkTxVaild(block, txID) {
+    static checkTxVaild(validCode) {
         //TO DO:
-        return true;
+        logger.debug('checkTxVaild  ' + validCode)
+        if (validCode == 'VALID') {
+            return true;
+        } else {
+            return false
+        }
     }
 
 }

@@ -12,11 +12,13 @@ logger.setLevel(config.gateway.logLevel);
 console.log(networkConfig)
 var grpc = require('grpc');
 var _policiesProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
-var _chaincodeDataProto = grpc
-    .load(__dirname + '/addedProto/chaincode_data.proto')
+var _chaincodeProto = grpc
+    .load(__dirname + '/protos/peer/chaincode.proto')
     .protos;
+var _common = grpc.load(__dirname + '/protos/common/common.proto').common;
 var _identityProto = grpc.load(path.join(__dirname, '/protos/msp/identities.proto')).msp;
 var _chaincodeDataProto = grpc.load(__dirname + '/addedProto/chaincode_data.proto').protos;
+var _transProto = grpc.load(__dirname + '/protos/peer/transaction.proto').protos;
 var _commomProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
 var _mspPrincipalProto = grpc.load(__dirname + '/protos/msp/msp_principal.proto').common;
 var _abProto = grpc.load(__dirname + '/protos/orderer/ab.proto').orderer;
@@ -143,8 +145,14 @@ var processBlockToReadAbleJson = function(response_payloads) {
         return result
     }
     var result = []
+    var txStatusCodes = response_payloads.metadata.metadata[_common.BlockMetadataIndex.TRANSACTIONS_FILTER];
+
     for (let dataIndex in response_payloads.data.data) {
+        var validCode = convertValidationCode(txStatusCodes[dataIndex]);
+        logger.debug(`######## start to parse tx ${dataIndex} ##########`)
+        logger.debug(`######## vaild code ${validCode} ##########`)
         let txPayload = {}
+        txPayload.validCode = validCode
         let channelHeader = response_payloads.data.data[dataIndex].payload.header.channel_header
 
         if (response_payloads.data.data[dataIndex].payload.data.config) {
@@ -201,6 +209,16 @@ var processBlockToReadAbleJson = function(response_payloads) {
 
     }
     return result
+}
+var _validation_codes = {};
+var keys = Object.keys(_transProto.TxValidationCode);
+for (var i = 0; i < keys.length; i++) {
+    let new_key = _transProto.TxValidationCode[keys[i]];
+    _validation_codes[new_key] = keys[i];
+}
+
+function convertValidationCode(code) {
+    return _validation_codes[code];
 }
 var cloneJSON = (json) => {
     return JSON.parse(JSON.stringify(json))

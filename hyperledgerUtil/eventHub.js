@@ -67,7 +67,7 @@ var checkPeerNameExist = (peerName, orgName) => {
 }
 function getOrgEventHubs(userContext, channelName, orgName) {
     orgName = orgName || myOrgName
-    logger.debug('start to get event hubs')
+    logger.debug('start to get event hubs getOrgEventHubs')
     var ehs = []
     var orgPeerInChannel = true
     if (channelName) {
@@ -79,16 +79,14 @@ function getOrgEventHubs(userContext, channelName, orgName) {
     if (orgPeerInChannel) {
         for (let peer in ORGS[orgName]) {
             if (peer.indexOf('peer') > -1) {
+                logger.debug(`join ${peer} eh in to event hub`)
                 client._userContext = userContext;
-
-                eh = client.newEventHub();
-                let opt = helper.getOpt(orgName, peer)
-                eh.setPeerAddr(helper.transferSSLConfig(ORGS[orgName][peer]['events']), opt);
-                eh.connect();
-                ehs.push(eh)
+                ehs.push(getOrNewEventHubObjFromMap(peer, userContext))
             }
         }
     }
+    logger.debug('getOrgEventHubs finish')
+    logger.debug(ehs)
     return ehs
 }
 function getEventHubByIp(ip, userContext) {
