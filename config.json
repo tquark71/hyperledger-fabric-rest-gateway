@@ -1,8 +1,9 @@
 {
     "gateway": {
-        "port": "4002",
+        "port": "4001",
         "logLevel": "DEBUG",
         "logPath": "./volume/logs",
+        "gopath":"./gopath",
         "jwtSecret": "secret",
         "tlsOptions": {
             "tlsEnable": false,
@@ -22,12 +23,12 @@
             "hostName": "localhost"
         },
         "monitor": {
-            "enabled": true,
+            "enabled": false,
             "interval": 3000
         }
     },
     "fabric": {
-        "orgName": "org2",
+        "orgName": "org1",
         "mode": "prod",
         "keyValueStore": {
             "type": "fs",

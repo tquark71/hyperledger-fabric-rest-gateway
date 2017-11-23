@@ -1,7 +1,9 @@
 var mongoose = require('mongoose');
 var config = require('../../config');
 var myOrgName = config.fabric.orgName;
-var ORGS = require('../../network-config')['network-config']
+var hfc = require('fabric-client');
+var networkConfig = require('../../hyperledgerUtil/networkConfig')
+var ORGS =networkConfig.getNetworkConfig();
 var log4js = require('log4js');
 var logger = log4js.getLogger('mongo');
 var port = config.gateway.storage.mongo.port;
@@ -15,33 +17,39 @@ var options = {
 var basicSchema = require('./schemas/schema');
 var schema = require('./schemas/monitorSchema');
 var gatewaySchema = require('./schemas/gatewaySchema');
+var gatewayEventHub = require('../../gatewayEventHub');
+gatewayEventHub.on('n-add-peer',(peerName)=>{
+    connectAndLinkModelsForPeerDb(peerName);
+})
 var DBs = {}
+var connectAndLinkModelsForPeerDb =(peerName)=>{
+    var uPS = ""
+    if (config.gateway.storage.mongo.username && config.gateway.storage.mongo.username != "" && config.gateway.storage.mongo.password && config.gateway.storage.mongo.password != "") {
+        uPS = config.gateway.storage.mongo.username + ':'
+        config.gateway.storage.mongo.password + '@'
+    }
+    logger.info('connect db at ' + 'mongodb://' + uPS + ip + ':' + port + '/' + myOrgName + '-' + peerName)
+    let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + peerName, options, () => {
+        logger.info('peer db connect')
+    })
+    connect.on('reconnected', () => {
+        logger.info(myOrgName + " " + peerName + " reconnected");
+    })
+    DBs[peerName] = {
+    }
+
+    for (let dbSchema in basicSchema) {
+        let dbName = dbSchema.replace('Schema', '') + "DB"
+        DBs[peerName][dbName] = connect.model(dbName, basicSchema[dbSchema])
+    }
+    for (let dbSchema in schema) {
+        let dbName = dbSchema.replace('Schema', '') + "DB"
+        DBs[peerName][dbName] = connect.model(dbName, schema[dbSchema])
+    }
+}
 for (let peer in ORGS[myOrgName]) {
     if (peer.indexOf('peer') > -1) {
-        var uPS = ""
-        if (config.gateway.storage.mongo.username && config.gateway.storage.mongo.username != "" && config.gateway.storage.mongo.password && config.gateway.storage.mongo.password != "") {
-            uPS = config.gateway.storage.mongo.username + ':'
-            config.gateway.storage.mongo.password + '@'
-        }
-        logger.info('connect db at ' + 'mongodb://' + uPS + ip + ':' + port + '/' + myOrgName + '-' + peer)
-        let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + peer, options, () => {
-            logger.info('peer db connect')
-        })
-        connect.on('reconnected', () => {
-            logger.info(myOrgName + " " + peer + " reconnected");
-        })
-        DBs[peer] = {
-        }
-
-        for (let dbSchema in basicSchema) {
-            let dbName = dbSchema.replace('Schema', '') + "DB"
-            DBs[peer][dbName] = connect.model(dbName, basicSchema[dbSchema])
-        }
-        for (let dbSchema in schema) {
-            let dbName = dbSchema.replace('Schema', '') + "DB"
-            DBs[peer][dbName] = connect.model(dbName, schema[dbSchema])
-        }
-
+        connectAndLinkModelsForPeerDb(peer)
     }
 }
 function connectGatewayModel() {

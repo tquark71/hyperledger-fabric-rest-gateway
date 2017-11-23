@@ -2,12 +2,19 @@ var hyUtil = require('../../hyperledgerUtil')
 var response = require('../../API/response')
 var monitor = require('../../monitor')
 var passport = require('passport');
-var networkConfig = require('../../network-config.json');
+var hfc = require('fabric-client');
+var networkConfig = require('../../hyperledgerUtil').networkConfig
+var networkConfigAll = {
+    "network-config": networkConfig.getNetworkConfig(),
+    "channelConfig": networkConfig.getChannelConfig()
+}
 var config = require('../../config')
 var UserDb = require('../../monitor/userDb.json')
 var jwt = require('jsonwebtoken');
 var jwtSecret = config.gateway.jwtSecret;
 var myOrgName = config.fabric.orgName;
+var log4js = require('log4js')
+var logger = log4js.getLogger('swagger/monitor')
 module.exports.returnPeerInfo = (req, res, next) => {
     var body = req.swagger.params;
 
@@ -166,22 +173,24 @@ module.exports.returnChaincodeInfo = (req, res, next) => {
 }
 
 module.exports.returnNetworkConfig = (req, res, next) => {
-    let thisNetworkConfig = hyUtil.helper.cloneJSON(networkConfig);
+    let thisNetworkConfig = hyUtil.helper.cloneJSON(networkConfigAll);
     response.returnSuccess(thisNetworkConfig, res)
 
 }
 module.exports.returnAliveState = (req, res, next) => {
 
-    response.returnSuccess(hyUtil.helper.getAllAliveState(), res)
+    response.returnSuccess(hyUtil.peers.getAllAliveState(), res)
 
 }
 module.exports.returnSelfNetworkConfig = (req, res, next) => {
-    var myNetworkConfig = hyUtil.helper.cloneJSON(networkConfig['network-config'][myOrgName])
+    var myNetworkConfig = hyUtil.helper.cloneJSON(networkConfigAll['network-config'][myOrgName])
+    logger.debug(myNetworkConfig)
     for (let peerName in myNetworkConfig) {
         if (peerName.indexOf('peer') > -1) {
-            myNetworkConfig[peerName].status = hyUtil.helper.getPeerAliveState(peerName);
+            myNetworkConfig[peerName].status = hyUtil.peers.getPeerAliveState(peerName);
         }
     }
-    response.returnSuccess(networkConfig['network-config'][myOrgName], res)
+
+    response.returnSuccess(myNetworkConfig, res)
 
 }

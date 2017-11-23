@@ -26,6 +26,7 @@ var peer = class {
         this.blockEventNumber = null
         this.channelObjs = {}
         this.io = io;
+        this.intervalHandler = null;
     }
     //return function, for monitor query protocool
     returnPeerInfo() {
@@ -129,9 +130,9 @@ var peer = class {
         this.fetchPeerInfo().then(() => {
             logger.debug('start to loop for renew peer %s info ', self.peerName)
             this.establishEventHub()
-            setInterval(() => {
+            this.intervalHandler = setInterval(() => {
                 // check peer status, if peer crashed, don't fetch info from it.
-                let res = hyperUtil.helper.getPeerAliveState(self.peerName)
+                let res = hyperUtil.peers.getPeerAliveState(self.peerName)
                 self.peerAlive = res
                 for (var channelName in self.channelObjs) {
                     // set children's state
@@ -150,9 +151,9 @@ var peer = class {
 
             }, config.gateway.monitor.interval)
         })
-
-
-
+    }
+    delete() {
+        clearInterval(this.intervalHandler);
     }
 }
 

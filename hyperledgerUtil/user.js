@@ -14,13 +14,30 @@ var getUserData = () => {
     return userData
 }
 var userData = getUserData()
-var ORGS = hfc.getConfigSetting('network-config');
+var networkConfig = require('./networkConfig');
+var ORGS = networkConfig.getNetworkConfig();
+;
 var Promise = require('bluebird')
-var orgName = config.fabric.orgName
-var mspid = ORGS[orgName].mspid
+var myOrgName = config.fabric.orgName
+var mspid = ORGS[myOrgName].mspid
 var fs = require('fs')
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/user');
+var gatewayEventHube = require('../gatewayEventHub');
+var adminKeyWatcher;
+var adminCertWatcher;
+
+gatewayEventHube.on('n-org-revise', (reviseInfo) => {
+    if (reviseInfo.orgName == myOrgName && reviseInfo.attribute == 'admin') {
+        //turn off the original folder watcher;
+        adminKeyWatcher.close();
+        adminCertWatcher.close();
+        enrollOrgAdmin(true).then((user) => {
+            logger.debug('refresh org admin by change network-config admin success!');
+            gatewayEventHube.emit('admin-changed');
+        });
+    }
+})
 logger.setLevel(config.gateway.logLevel);
 var users = {}
 var orgAdminEnrollID = "orgAdmin"
@@ -36,20 +53,31 @@ function readAllFiles(dir) {
     });
     return certs;
 }
-var enrollOrgAdmin = function() {
-    var admin = ORGS[orgName].admin;
-    var keyPath = path.join(__dirname, ORGS[orgName].admin.key);
-    var keyPEM = readAllFiles(keyPath)[0]
-    var certPath = path.join(__dirname, ORGS[orgName].admin.cert);
-    var certPEM = readAllFiles(certPath)[0];
+var enrollOrgAdmin = function(forceRefresh) {
 
+    var keyPath = path.join(__dirname, ORGS[myOrgName].admin.key);
+    var certPath = path.join(__dirname, ORGS[myOrgName].admin.cert);
+    adminKeyWatcher = fs.watch(path.resolve(keyPath), () => {
+        adminKeyWatcher.close();
+        enrollOrgAdmin(true)
+    })
+    adminCertWatcher = fs.watch(path.resolve(certPath), () => {
+        adminCertWatcher.close();
+        enrollOrgAdmin(true)
+    })
     return client.getUserContext(orgAdminEnrollID, true).then((user) => {
-
+        if (forceRefresh) {
+            user = null
+        }
         if (user) {
             logger.info('get orgAdmin from presist')
 
             return Promise.resolve(user)
         } else {
+            var admin = ORGS[myOrgName].admin;
+
+            var keyPEM = readAllFiles(keyPath)[0]
+            var certPEM = readAllFiles(certPath)[0];
             logger.debug('start to load certs and key for orgAdmin')
             return client.createUser({
                 username: orgAdminEnrollID,
@@ -64,6 +92,7 @@ var enrollOrgAdmin = function() {
         logger.info('orgAdmin enrolled success')
         users[orgAdminEnrollID] = orgAdmin
         orgAdmin.isOrgAdmin = true;
+
         return Promise.resolve(orgAdmin)
     })
 
@@ -79,7 +108,8 @@ var enrollCaAdmin = function() {
         .getUserContext(config.fabric.ca.admin.enrollmentID, true)
         .then((user) => {
             if (user) {
-                logger.info('Successfully loaded adminuser from persistence');
+                logger.info('Successfully loaded ca adminuser from persistence');
+                users[caAdminEnrollID] = user;
                 return user;
             } else {
                 logger.debug("enroll CaAdmin start")
@@ -137,7 +167,7 @@ var registarUser = (username, enrollmentSecret) => {
                 return caClient.register({
                     enrollmentID: username,
                     enrollmentSecret: enrollmentSecret,
-                    affiliation: orgName + '.department1'
+                    affiliation: myOrgName + '.department1'
                 }, member);
             }).then((secret) => {
                 userData[username] = secret
@@ -176,7 +206,7 @@ var enrollUser = (enrollID, enrollmentSecret) => {
 
                     member = new User(enrollID);
                     member._enrollmentSecret = enrollmentSecret;
-                    return member.setEnrollment(message.key, message.certificate, ORGS[orgName].mspid);
+                    return member.setEnrollment(message.key, message.certificate, ORGS[myOrgName].mspid);
                 })
                 .then(() => {
                     client.setUserContext(member);
@@ -258,13 +288,11 @@ var innerRegisterAndEnrollMethod = (userName, password, adminUserContext) => {
         member._enrollmentSecret = enrollmentSecret;
         return member.setEnrollment(message.key, message.certificate, mspid);
     }).then(() => {
-        client.setUserContext(member,false);
+        client.setUserContext(member, false);
         users[userName] = member
 
         return member;
-    }).catch((e)=>{
-        logger.error(e)
-    });
+    })
 }
 var getRegisteredUsersync = function(username) {
 
@@ -303,9 +331,9 @@ var userInit = () => {
     caClient = require('./ca')
     logger.info('start to init user objs')
 
-    adminPromise = [enrollCaAdmin().then(()=>{
-       return enrollOrgAdmin()
-    }) ]
+    adminPromise = [enrollCaAdmin().then(() => {
+        return enrollOrgAdmin()
+    })]
 
     return Promise.all(adminPromise).then(
         () => {

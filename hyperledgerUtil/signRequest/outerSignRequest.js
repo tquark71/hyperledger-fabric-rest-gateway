@@ -4,7 +4,7 @@ var fs = require('fs')
 var util = require('util');
 var path = require('path')
 var user = require('../user')
-var config = require('../../config.json');
+var config = require('../../config');
 
 var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
@@ -200,7 +200,7 @@ var outerSignRequest = class {
         if (toRoleCheckPassed) {
             let sendRequest
             if (this.type = constants.CHANNEL_CONFIG_REQUEST) {
-                client.setUserContext(userContext,true);
+                client.setUserContext(userContext, true);
                 let proto_config_signature = client.signChannelConfig(this.content.configUpdate);
                 body.payload = proto_config_signature.toBuffer();
                 sendRequest = new SendRequest({

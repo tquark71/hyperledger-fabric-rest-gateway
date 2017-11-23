@@ -10,22 +10,54 @@ var log4js = require('log4js');
 var logger = log4js.getLogger('monitor');
 logger.setLevel(config.gateway.logLevel);
 var myOrgName = config.fabric.orgName;
-var ORGS = hfc.getConfigSetting('network-config');
+var networkConfig = hyperUtil.networkConfig;
+var ORGS = networkConfig.getNetworkConfig();
 var Peer = require('./peer')
+var gatewayEventHub = require('../gatewayEventHub');
 // var monitorIoAPIs = require('./ioAPI')
 peers = {}
 var io = require('../io').getIo();
+gatewayEventHub.on('n-peer-add', (orgName, peerName) => {
+    logger.debug('receive event');
+    logger.debug('<======= n-peer-remove ========>');
+    logger.debug('orgName');
+    logger.debug(orgName);
+    logger.debug('peerName');
+    logger.debug(peerName);
+    if (orgName == myOrgName) {
+        initPeer(peerName);
+    }
+})
+gatewayEventHub.on('n-peer-remove', (orgName, peerName) => {
+    logger.debug('receive event');
+    logger.debug('<======= n-peer-remove ========>');
+    logger.debug('orgName');
+    logger.debug(orgName);
+    logger.debug('peerName');
+    logger.debug(peerName);
+    if (orgName == myOrgName) {
+        getPeer(peerName).then((peer) => {
+            peer.delete();
+            delete peers[peerName];
+        })
+    }
+
+})
 // internal method to init monitor/peer object
+var initPeer = (peerName) => {
+    logger.info('new monitor peer obj for peer %s', peerName)
+    peers[peerName] = new Peer(peerName, ORGS[myOrgName][peerName].requests, io)
+    peers[peerName].start()
+}
 var initDB = () => {
     logger.info('start to monitor')
     for (let peer in ORGS[myOrgName]) {
         if (peer.indexOf('peer') > -1) {
-            logger.info('new monitor peer obj for peer %s', peer)
-            peers[peer] = new Peer(peer, ORGS[myOrgName][peer].requests, io)
-            peers[peer].start()
+            initPeer(peer)
         }
     }
 }
+
 // get monitor/peer object
 var getPeer = (peerName) => {
     logger.debug('fetch peer object %s', peerName)
@@ -37,7 +69,7 @@ var getPeer = (peerName) => {
 }
 let allPeerAliveStatus = {};
 setInterval(() => {
-    let currentAliveStatus = hyperUtil.helper.getAllAliveState()
+    let currentAliveStatus = hyperUtil.peers.getAllAliveState()
 
     if (JSON.stringify(currentAliveStatus) !== JSON.stringify(allPeerAliveStatus)) {
         logger.debug('emit aliveStatusChange')

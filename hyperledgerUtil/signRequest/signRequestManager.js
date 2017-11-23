@@ -2,7 +2,7 @@ var fs = require('fs')
 var util = require('util');
 var path = require('path');
 var user = require('../user')
-var config = require('../../config.json');
+var config = require('../../config');
 var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var InnerSignRequest = require('./innerSignRequest');
@@ -31,7 +31,7 @@ function receiveSignRequestResponse(response) {
     let uuid = response.uuid;
     return getInnerSignRequestObj(uuid).then((innerSignRequestObj) => {
 
-        return innerSignRequestObj.receiveResponse(response).then(()=>{
+        return innerSignRequestObj.receiveResponse(response).then(() => {
             return 'received'
         })
     })
@@ -175,7 +175,7 @@ function createNewInnerSignRequest(type, name, description, policy, content, use
         signRequestSignatureBytes
     })
     logger.debug('set into collection')
-    return innerRequset.formateRootPolicy().then(()=>{
+    return innerRequset.formateRootPolicy().then(() => {
         innerSignRequestCollection[requestUuid] = innerRequset;
         return Promise.resolve(requestUuid);
     })

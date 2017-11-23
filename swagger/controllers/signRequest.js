@@ -117,7 +117,7 @@ module.exports.rejectAndResponse = (req, res, next) => {
     var toRole = body.toRole;
     hyUtil.user.matchUserDb(user.enrollID, user.enrollSecret).then((result) => {
         var userObj = hyUtil.user.getUser(user.enrollID)
-        return signRequestManger.getOuterSignRequestObj(uuid,toRole).then((outerSignRequest) => {
+        return signRequestManger.getOuterSignRequestObj(uuid, toRole).then((outerSignRequest) => {
             logger.debug('get outer Request obj success ');
             logger.debug(outerSignRequest)
             return outerSignRequest.rejectRequest(reason, user.enrollID, userObj)

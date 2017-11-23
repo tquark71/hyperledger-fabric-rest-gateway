@@ -1,19 +1,21 @@
 /* eslint consistent-return:0 */
+var config = require('./config')
+require('./envCofig')(config)
 var hyperledgerUtil = require('./hyperledgerUtil')
 var fs = require('fs')
 var fx = require('mkdir-recursive')
 var session = require('express-session')
+var blockdecoder = require('fabric-client/lib/BlockDecoder');
 var passport = require('passport');
 require('./monitor/passportConfig/passportStragy')(passport);
 require('./custermize')
-var config = require('./config')
 var path = require('path')
 var logPath = path.join(config.gateway.logPath, config.fabric.orgName)
 fx.mkdirSync(logPath);
 var https = require('https');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
-process.env.GOPATH = path.resolve(__dirname, './gopath')
+process.env.GOPATH = path.resolve(__dirname, config.gateway.gopath)
 var swaggerTools = require('swagger-tools');
 var jsyaml = require('js-yaml');
 var options = {
@@ -115,6 +117,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function(middleware) {
     // app.listen(port);
     }
     hyperledgerUtil.init().then(() => {
+
         if (config.gateway.monitor.enabled) {
             monitor.initDB()
         }

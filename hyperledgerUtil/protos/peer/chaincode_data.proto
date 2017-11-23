@@ -67,29 +67,3 @@ message DeployInput {
 message ChaincodeInput {
     repeated bytes args  = 1;
 }
-
-// message CcInput {
-//     enum Type{
-//         UNDEFINED=0;
-//         GOLANG=1;
-//         NODE=2;
-//         CAR=3;
-//         JAVA=4;
-//     }
-
-//     Type type=1;
-//     ChaincodeID chaincode_id = 2;
-//     Input input=3;
-//     int32 timeout=4;
-// }
-// message ChaincodeID {
-//     string path=1;
-//     string name=2;
-//     string version=3;
-// }
-
-// message Input {
-//     repested bytes args=1;
-// }
-// A response with a representation similar to an HTTP response that can
-// be used within another message.

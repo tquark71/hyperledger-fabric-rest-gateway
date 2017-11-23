@@ -12,6 +12,7 @@ module.exports.chaincodeInstall = function(req, res, next) {
 
     var chaincodeVersion = body.chaincodeVersion;
     var sourceType = body.sourceType;
+    var langType = body.langType;
     var user = body.user
     var opt = body.opt
     var errMsg = response.checkParams(body, ["channelName", "chaincodeName", "chaincodePath", "chaincodeVersion", "sourceType", "user"])
@@ -23,7 +24,7 @@ module.exports.chaincodeInstall = function(req, res, next) {
             .matchUserDb(user.enrollID, user.enrollSecret)
             .then((result) => {
                 var userObj = hyUtil.user.getUser(user.enrollID)
-                return hyUtil.chaincodeTrigger.installChaincode(channelName, chaincodeName, sourceType, chaincodePath, chaincodeVersion, userObj, opt)
+                return hyUtil.chaincodeTrigger.installChaincode(channelName, chaincodeName, sourceType, chaincodePath, chaincodeVersion, langType, userObj, opt)
             }).then((result) => {
             response.returnSuccess(result, res)
         }, (err) => {

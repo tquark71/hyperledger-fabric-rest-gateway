@@ -6,7 +6,7 @@ var util = require('util');
 var path = require('path')
 var user = require('../user')
 var EventHub = require('fabric-client/lib/EventHub.js');
-var config = require('../../config.json');
+var config = require('../../config');
 
 var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
@@ -432,7 +432,7 @@ var innerSignRequest = class {
                 policy.type = 'sign-by';
             }
         }
-        if(!findType){
+        if (!findType) {
             throw new Error()
         }
         policy.indexArr = indexArr;

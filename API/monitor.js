@@ -3,7 +3,6 @@ var config = require('../config')
 var log4js = require('log4js');
 var monitor = require('../monitor')
 var logger = log4js.getLogger('API/monitor');
-var networkConfig = require('../network-config')
 var myOrgName = config.fabric.orgName;
 var response = require('./response')
 var Dbs = require('../Db')
@@ -121,11 +120,4 @@ router.use('/monitor*', passport.authenticate('jwt', {
     //             response.returnFailed(e, res)
     //         })
     //     }
-    // })
-
-    // router.get('/monitor/network/all', function(req, res) {
-    //     response.returnSuccess(networkConfig, res)
-    // })
-    // router.get('/monitor/network/my', function(req, res) {
-    //     response.returnSuccess(networkConfig['network-config'][myOrgName], res)
     // })

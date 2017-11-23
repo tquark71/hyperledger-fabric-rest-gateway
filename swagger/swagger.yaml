@@ -10,6 +10,511 @@ schemes:
 produces:
 - "application/json"
 paths:
+  /networkConfig/networkConfig/add/org:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nAddPeers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["orgName",peers","user"]
+          properties:
+            orgName:
+              type: string
+            peers:
+              type: object
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/add/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nAddPeers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["orgName","peer","user"]
+          properties:
+            orgName:
+              type: string
+            peer:
+              type: object
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/add/orderer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nAddOrderer"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [ordererName, url, serverHostName, tlsCacerts,"user"]
+          properties:
+            ordererName:
+              type: string
+            url:
+              type: string
+            serverHostName:
+              type: string
+            tlsCacerts:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/remove/org:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nRemoveOrgs"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [orgName,"user"]
+          properties:
+            orgName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/remove/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nRemovePeers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["orgName","peerName","user"]
+          properties:
+            orgName:
+              type: string
+            peerName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/remove/orderer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nRemoveOrderers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["ordererName","user"]
+          properties:
+            ordererName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/networkConfig/revise/org:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nReviseOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [orgName, attribute, value,"user"]
+          properties:
+            orgName:
+              type: string
+            attribute:
+              type: string
+            value:
+              type: object
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+
+  /networkConfig/networkConfig/revise/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nRevisePeer"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [orgName, peerName, attribute, value,"user"]
+          properties:
+            orgName:
+              type: string
+            peerName:
+              type: string
+            attribute:
+              type: string
+            value:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+
+  /networkConfig/networkConfig/revise/orderer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "nReviseOrderer"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [ordererName, attribute, value,"user"]
+          properties:
+            ordererName:
+              type: string
+            attribute:
+              type: string
+            value:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+
+
+####### channel config
+  /networkConfig/channelConfig/add/channel:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cAddChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [channelName]
+          properties:
+            channelName:
+              type: string
+            ordererNameArr:
+              type: array
+            orgObjArr:
+              type: array
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/add/org:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cAddOrgInChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [channelName, orgName,"user"]
+          properties:
+            channelName:
+              type: string
+            orgName:
+              type: string
+            peerObjArr:
+              type: array
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/add/orderer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cAddOrdererInChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [channelName, ordererName,"user"]
+          properties:
+            channelName:
+              type: string
+            ordererName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/add/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cAddPeerInChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","orgName","peerName","type","user"]
+          properties:
+            orgName:
+              type: string
+            channelName:
+              type: string
+            peerName:
+              type: string
+            type:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/remove/org:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cRemoveOrgInChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","orgName","user"]
+          properties:
+            channelName:
+              type: string
+            orgName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/remove/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cRemovePeer"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","orgName","peerName","user"]
+          properties:
+            channelName:
+              type: string
+            orgName:
+              type: string
+            peerName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/remove/orderer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cRemoveOrdererInChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","ordererName","user"]
+          properties:
+            channelName:
+              type: string
+            ordererName:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+  /networkConfig/channelConfig/changeType/peer:
+    post:
+      tags:
+      - "NetworkConfig"
+      summary: ""
+      description: ""
+      operationId: "cChangePeerTypeChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "send SignRequest request"
+        required: true
+        schema:
+          type: "object"
+          required: [channelName, orgName, peerName, peerType]
+          properties:
+            channelName:
+              type: string
+            orgName:
+              type: string
+            peerName:
+              type: string
+            peerType:
+              type: string
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+      x-swagger-router-controller: "networkConfig"
+
+
   /signRequest/sendRequest:
     post:
       tags:
@@ -392,7 +897,7 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["chaincodeName","channelName","chaincodePath","chaincodeVersion","sourceType","user"]
+          required: ["chaincodeName","channelName","chaincodePath","chaincodeVersion","sourceType",langType,"user"]
           properties:
             chaincodeName:
               example: mycc
@@ -412,6 +917,10 @@ paths:
               enum: ["sourceCode", "package"]
               type: "string"
               example: sourceCode
+            langType:
+              enum: [golang,node,java]
+              type: string
+              example: golang
             user:
               $ref: "#/definitions/user"
       responses:
@@ -734,7 +1243,7 @@ paths:
       tags:
       - "Chaincode"
       summary: "query installed chaincdoe"
-      description: "get installed chaincode from a self organiztion's peer, peer's name and url was mapped on the network-config.json"
+      description: "get installed chaincode from a self organiztion's peer, peer's name and url was mapped on the network-config"
       operationId: "getInstalledChaincodes"
       produces:
       - "application/json"
@@ -974,6 +1483,8 @@ paths:
           type: "object"
           required: ["channelName","user"]
           properties:
+            opt:
+              type: object
             channelName:
               example: mychannel
               type: "string"

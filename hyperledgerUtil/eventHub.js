@@ -2,24 +2,145 @@ var client = require('./client')
 var channels = require('./channels')
 var util = require('util')
 var helper = require('./helper')
+var peers = require('./peers')
 var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
-var config = require('../config.json');
-var orgName = config.fabric.orgName
+var config = require('../config');
+var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var tcpp = require('tcp-ping')
 var logger = log4js.getLogger('util/eventHub');
 logger.setLevel(config.gateway.logLevel);
 var fs = require('fs')
 var path = require('path')
-var ORGS = hfc.getConfigSetting('network-config');
+var networkConfig = require('./networkConfig')
+var ORGS = networkConfig.getNetworkConfig();
+var channelConfig = networkConfig.getChannelConfig();
 var request = require('request')
+var gatewayEventHub = require('../gatewayEventHub');
 
 var eventHubUrlDbMethod = require('../Db').eventHubUrlMethod;
 var peersEventHub = {}
 var eventHistoryMethod = require('../Db').eventHubHistoryMethod;
 var eventReturnMap = {}
+gatewayEventHub.on('admin-changed', () => {
+    for (let peerName in peersEventHub) {
+        copyCallBackSet(peerName);
+        peersEventHub[peerName].eh.disconnect();
+        resetCallbackSet(peerName);
+        client.setUserContext(user.getOrgAdmin());
+        peersEventHub[peerName].eh.connect()
+    }
+})
+gatewayEventHub.on('n-peer-revise', (reviseInfo) => {
+    let {orgName, peerName, attribute} = reviseInfo;
+    if (orgName == myOrgName && attribute == 'events') {
+        logger.debug('try recnnect to events hub cause events attribute has been changed')
+        if (peersEventHub[peerName]) {
+            copyCallBackSet(peerName);
+            peersEventHub[peerName].eh.disconnect();
+            resetCallbackSet(peerName);
+            client.setUserContext(user.getOrgAdmin());
+            let opt = helper.getOpt(myOrgName, peerName)
+            peersEventHub[peerName].eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peerName]['events']), opt)
+            peersEventHub[peerName].eh.connect()
+        }
+    }
+})
+gatewayEventHub.on('n-remove-peer', (orgName, peerName) => {
+    logger.debug('receive n-remove-peer to delete event hub connect')
+    if (orgName == myOrgName) {
+        if (peersEventHub[peerName]) {
+            let eh = peersEventHub[peerName].eh;
+            eh.disconnect();
+            delete peersEventHub[peerName];
+        }
+    }
+})
+var checkPeerNameExist = (peerName, orgName) => {
+    if (ORGS[orgName].hasOwnProperty(peerName)) {
+        return true
+    } else {
+        return false
+    }
+}
+function getOrgEventHubs(userContext, channelName, orgName) {
+    orgName = orgName || myOrgName
+    logger.debug('start to get event hubs')
+    var ehs = []
+    var orgPeerInChannel = true
+    if (channelName) {
+        orgPeerInChannel = false
+        if (channelConfig[channelName].peers.hasOwnProperty(orgName)) {
+            orgPeerInChannel = true
+        }
+    }
+    if (orgPeerInChannel) {
+        for (let peer in ORGS[orgName]) {
+            if (peer.indexOf('peer') > -1) {
+                client._userContext = userContext;
+
+                eh = client.newEventHub();
+                let opt = helper.getOpt(orgName, peer)
+                eh.setPeerAddr(helper.transferSSLConfig(ORGS[orgName][peer]['events']), opt);
+                eh.connect();
+                ehs.push(eh)
+            }
+        }
+    }
+    return ehs
+}
+function getEventHubByIp(ip, userContext) {
+    logger.debug('start to get %s evenhub', ip)
+    for (let peer in ORGS[myOrgName]) {
+        if (peer.indexOf('peer') > -1) {
+            if (ORGS[myOrgName][peer].events.indexOf(ip) > -1) {
+                client.setUserContext(userContext, true);
+                let eh = client.newEventHub();
+                let opt = helper.getOpt(myOrgName, peer)
+                eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peer]['events']), opt)
+                eh.connect();
+                return eh
+            }
+        }
+    }
+    throw new Error('can not get event hub from ' + ip)
+}
+var closeEhs = function(ehs) {
+
+    logger.debug('start to close event hubs');
+    for (var key in ehs) {
+        var eventhub = ehs[key];
+        if (eventhub && eventhub.isconnected()) {
+            eventhub.disconnect();
+        }
+    }
+};
+function getEventHubByChannel(channelName, userContext) {
+    logger.debug('start to get event hub by channel');
+    var ehs = [];
+    for (let peerIndex in channelConfig[channelName].peers[myOrgName]) {
+        let peerName = channelConfig[channelName].peers[myOrgName][peerIndex].name
+
+        ehs.push(getEventHubByName(peerName, userContext))
+    }
+    return ehs
+}
+function getEventHubByName(peerName, userContext) {
+    if (checkPeerNameExist(peerName, myOrgName)) {
+        logger.debug('start to get %s evenhub', peerName)
+        client.setUserContext(userContext, true);
+        let eh = client.newEventHub();
+        let opt = helper.getOpt(myOrgName, peerName)
+        logger.debug('event hub url is ' + ORGS[myOrgName][peerName]['events'])
+        eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peerName]['events']), opt)
+        eh.connect();
+        logger.debug('finish get eventhub')
+        return eh
+    }
+    throw new Error('can not get event hub from ' + peerName)
+}
 var unregisterEventToUrl = (type, peerName, url, opt) => {
     var response
     var eh = getOrNewEventHubObjFromMap(peerName)
@@ -88,21 +209,56 @@ var thresholdCallbackWrapper = (type, uuid) => {
 
     }
 }
+
 var registerEventWithThreshold = (type, threshold, peerNameArr, userContext, cb, opt) => {
     let uuid = require('uuid/v4')();
     thresholdCallbackCollection[uuid] = {
+        type: type,
         cb,
         triggerList: {},
         threshold: threshold,
+        cbSlot: []
 
     }
     let thresholdCb = thresholdCallbackWrapper(type, uuid)
     peerNameArr.forEach((peerName) => {
-        registerEvent(type, peerName, userContext, thresholdCb, opt);
+        let returnObj = registerEvent(type, peerName, userContext, thresholdCb, opt);
+        thresholdCallbackCollection[uuid].cbSlot.push({
+            name: peerName,
+            returnObj: returnObj
+        })
+    })
+    return uuid;
+
+}
+var unRegisterEventWithThreshold = (uuid) => {
+    collection = thresholdCallbackCollection[uuid];
+    if (!collection) {
+        throw new Error(`${uuid} of threshold event listener did not exist`);
+    }
+    let cbSlot = collection.cbSlot;
+    let type = collection.type
+    cbSlot.forEach((cbSet) => {
+        let peerName = cbSet.name;
+        let returnObj = cbSet.returnObj
+        unRegisterEvent(type, peerName, returnObj);
     })
 
 }
-// var unRegisterEventWithThreshold = (type) TODO
+var unRegisterEvent = (type, peerName, returnObj) => {
+    if (!peersEventHub[peerName]) {
+        throw `peer ${peerName} event hub did not exist, may have been canceled first`
+    }
+    var eh = peersEventHub[peerName].eh
+    if (!eh) {
+        throw new Error(`${peerName}'s event hub didnot existed`);
+    }
+    if (type == 'ccEvent') {
+        eh.unregisterChaincodeEvent(returnObj);
+    } else if (type == 'blockEvent') {
+        eh.unregisterBlockEvent(returnObj);
+    }
+}
 var registerEvent = (type, peerName, userContext, cb, opt) => {
 
     var eh = getOrNewEventHubObjFromMap(peerName, userContext)
@@ -110,19 +266,35 @@ var registerEvent = (type, peerName, userContext, cb, opt) => {
     if (type == "ccEvnet") {
         let chaincodeName = opt.chaincodeName
         let eventName = opt.eventName
-        eh.registerChaincodeEvent(chaincodeName, eventName, cb, (err) => {
+        return eh.registerChaincodeEvent(chaincodeName, eventName, cb, (err) => {
             logger.warn('event hub err ' + err)
         })
     } else if (type == "blockEvent") {
-        eh.registerBlockEvent(cb)
+        return eh.registerBlockEvent(cb)
     }
+}
+var copyCallBackSet = (peerName) => {
+    peersEventHub[peerName].callbackSet._chaincodeRegistrants = peersEventHub[peerName].eh._chaincodeRegistrants
+    peersEventHub[peerName].callbackSet._blockOnEvents = peersEventHub[peerName].eh._blockOnEvents
+    peersEventHub[peerName].callbackSet._blockOnErrors = peersEventHub[peerName].eh._blockOnErrors
+    peersEventHub[peerName].callbackSet._block_registrant_count = peersEventHub[peerName].eh._block_registrant_count;
+    peersEventHub[peerName].callbackSet._transactionOnEvents = peersEventHub[peerName].eh._transactionOnEvents
+    peersEventHub[peerName].callbackSet._transactionOnErrors = peersEventHub[peerName].eh._transactionOnErrors
+}
+var resetCallbackSet = (peerName) => {
+    peersEventHub[peerName].eh._chaincodeRegistrants = peersEventHub[peerName].callbackSet._chaincodeRegistrants;
+    peersEventHub[peerName].eh._blockOnEvents = peersEventHub[peerName].callbackSet._blockOnEvents;
+    peersEventHub[peerName].eh._blockOnErrors = peersEventHub[peerName].callbackSet._blockOnErrors;
+    peersEventHub[peerName].eh._transactionOnEvents = peersEventHub[peerName].callbackSet._transactionOnEvents;
+    peersEventHub[peerName].eh._transactionOnErrors = peersEventHub[peerName].callbackSet._transactionOnErrors;
+    peersEventHub[peerName].eh._block_registrant_count = peersEventHub[peerName].callbackSet._block_registrant_count;
 }
 var getOrNewEventHubObjFromMap = (peerName, userContext) => {
     var eh
     if (peersEventHub[peerName]) {
         eh = peersEventHub[peerName].eh;
     } else {
-        eh = helper.getEventHubByName(peerName, userContext)
+        eh = getEventHubByName(peerName, userContext)
         peersEventHub[peerName] = {}
         peersEventHub[peerName].eh = eh;
         peersEventHub[peerName].callbackSet = {}
@@ -130,29 +302,23 @@ var getOrNewEventHubObjFromMap = (peerName, userContext) => {
         eh.registerBlockEvent((block) => {
         }, (err) => {
             logger.warn('Peer %s event hub disconnected, clone the callbck set', peerName)
-            peersEventHub[peerName].callbackSet._chaincodeRegistrants = eh._chaincodeRegistrants
-            peersEventHub[peerName].callbackSet._blockOnEvents = eh._blockOnEvents
-            peersEventHub[peerName].callbackSet._blockOnErrors = eh._blockOnErrors
-            peersEventHub[peerName].callbackSet._transactionOnEvents = eh._transactionOnEvents
-            peersEventHub[peerName].callbackSet._transactionOnErrors = eh._transactionOnErrors
+            copyCallBackSet(peerName);
         })
     }
     return eh
 }
+
 var reconnectHandler = () => {
 
     setInterval(() => {
         for (let peerName in peersEventHub) {
-            let status = helper.getPeerAliveState(peerName)
+            let status = peers.getPeerAliveState(peerName)
             // logger.debug("peer %s alive state : %s", peerName, status)
             if (status && !peersEventHub[peerName].alive) {
                 logger.warn('reconnect triggered ')
-                peersEventHub[peerName].eh._chaincodeRegistrants = peersEventHub[peerName].callbackSet._chaincodeRegistrants
-                peersEventHub[peerName].eh._blockOnEvents = peersEventHub[peerName].callbackSet._blockOnEvents
-                peersEventHub[peerName].eh._blockOnErrors = peersEventHub[peerName].callbackSet._blockOnErrors
-                peersEventHub[peerName].eh._transactionOnEvents = peersEventHub[peerName].callbackSet._transactionOnEvents
-                peersEventHub[peerName].eh._transactionOnErrors = peersEventHub[peerName].callbackSet._transactionOnErrors
+                resetCallbackSet(peerName)
                 setTimeout(() => {
+                    client.setUserContext(user.getOrgAdmin(), true)
                     peersEventHub[peerName].eh.connect()
                 }, 2000)
 
@@ -190,7 +356,9 @@ var registerEventToUrl = (type, peerName, url, userContext, saveToDb, opt) => {
         returnObjSlot = getEventReturnMap(labelArr, url)
         returnObj = eh.registerChaincodeEvent(chaincodeName, eventName, (payload) => {
             payloadobj = JSON.parse(JSON.stringify(payload))
-            logger.debug('receive event cc' + payloadobj)
+            logger.debug('receive event cc' + JSON.stringify(payloadobj))
+            logger.debug('data is ')
+            logger.debug(new Buffer.from(payloadobj.payload.data).toString())
             let eventHistoryInfo = {
                 peerName: peerName,
                 eventType: type,
@@ -348,9 +516,9 @@ var eventUrlDbPath = path.join(__dirname, '../Db/EventUrl.json')
 //     fs.writeFileSync(eventUrlDbPath, JSON.stringify(eventList))
 // }
 var resumeEventHubFromEventDbForUrl = (userContext) => {
-    var peerNameList = helper.getPeerNameList();
+    var peerNameList = peers.getPeerNameList();
     peerNameList.forEach((peerName) => {
-        client.setUserContext(userContext,true)
+        client.setUserContext(userContext, true)
         eventHubUrlDbMethod.getAllEvents(peerName).then((eventUrls) => {
             eventUrls.forEach((eventUrl) => {
                 if (eventUrl.type == 'ccEvent') {
@@ -394,7 +562,7 @@ var resumeEventHubFromEventDbForUrl = (userContext) => {
 
 
 reconnectHandler()
-resendHandler()
+// resendHandler()
 
 var returnAllEventHistory = (peerName) => {
     return eventHistoryMethod.getEventHistorys(peerName, {})
@@ -414,6 +582,12 @@ module.exports = {
     registerEvent: registerEvent,
     returnAllEventHistory: returnAllEventHistory,
     returnFailedEventHistory: returnFailedEventHistory,
-    registerEventWithThreshold: registerEventWithThreshold
+    registerEventWithThreshold: registerEventWithThreshold,
+    unRegisterEventWithThreshold: unRegisterEventWithThreshold,
+    getOrgEventHubs: getOrgEventHubs,
+    getEventHubByIp: getEventHubByIp,
+    closeEhs: closeEhs,
+    getEventHubByChannel: getEventHubByChannel,
+    getEventHubByName: getEventHubByName
 
 }

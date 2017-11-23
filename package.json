@@ -22,7 +22,7 @@
     "express-bearer-token": "^2.1.0",
     "express-session": "^1.15.5",
     "fabric-ca-client": "^1.0.0",
-    "fabric-client": "^1.0.2",
+    "fabric-client": "^1.1.0-preview",
     "fs-extra": "^2.0.0",
     "ip": "1.1.4",
     "js-yaml": "^3.9.1",

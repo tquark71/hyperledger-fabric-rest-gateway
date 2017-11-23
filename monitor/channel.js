@@ -227,16 +227,20 @@ var channel = class {
                             blocksTxs: blocksTxs
                         })
                     })
+                    logger.debug('changed chaincode name');
+                    logger.debug(this.diffChaincodes)
                     this.diffChaincodes.forEach((chaincodeName) => {
                         this.returnChaincodeInfo(chaincodeName).then((chaincodeInfo) => {
-                            this.io.emit('chaincodeChange', {
+                            console.log('chaincodeInfoChange emit')
+                            this.io.emit('chaincodeInfoChange', {
                                 peerName: this.peerName,
                                 channelName: this.channelName,
-                                chaincodeName: this.chaincodeName,
+                                chaincodeName: chaincodeName,
                                 chaincodeInfo
                             })
                         })
                     }, this)
+                    this.diffChaincodes=[];
 
 
 
@@ -261,7 +265,9 @@ var channel = class {
     }
     refreshBlockAndTx(block) {
         var blockNumber = block.header.number.low;
-
+        if(!blockNumber){
+            blockNumber = block.header.number;
+        }
         let verifyNumber = this.blockNumberArray.find((element) => {
             return element == blockNumber;
         })
@@ -277,7 +283,7 @@ var channel = class {
             var preHash = block.header.previous_hash;
             let actionBlock = hyperUtil.helper.processBlockToReadAbleJson(block)
             logger.debug('process block to json')
-            logger.debug(actionBlock)
+            logger.debug(JSON.stringify(actionBlock,null,2));
             var blockInfo = {
                 txNum: 0,
                 validNum: 0,
@@ -330,6 +336,7 @@ var channel = class {
     }
     refreshChaincodeInfo(valid, inputs, blockInfo) {
         logger.debug('start refresh chaincodeInfo')
+
         var self = this;
         var chaincodeName;
         var chaincodeInfo;
@@ -337,10 +344,21 @@ var channel = class {
         if (inputs.input[0] == 'invoke') {
             chaincodeName = inputs.chaincodeName.split(':')[0];
         } else if (inputs.input[0] == 'deploy' || inputs.input[0] == 'upgrade') {
+            logger.warn(JSON.stringify(inputs,null,2));
             chaincodeName = inputs.input[2].chaincodeName.split(':')[0]
         }
-        if (this.traceDone) {
-            this.diffChaincodes.push(chaincodeName)
+        // if track and trace step is finished, start to emit chaincode event
+        if (this.trackDone) {
+            //check chaincode emit list is duplicated?
+            let existed =false;
+            for(let oChaincodeName of this.diffChaincodes){
+                if(chaincodeName == oChaincodeName){
+                    existed = true;
+                }
+            }
+            if(!existed){
+                this.diffChaincodes.push(chaincodeName)
+            }
         }
         logger.debug('get chaincode name %s', chaincodeName)
         if (!self.chaincodes[chaincodeName]) {

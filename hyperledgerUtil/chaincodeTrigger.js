@@ -2,11 +2,13 @@ var client = require('./client')
 var channels = require('./channels')
 var util = require('util')
 var helper = require('./helper')
+var peers = require('./peers')
+var eventHub = require('./eventHub');
 var requestPlugin = require('./requestPlugin')
 var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
-var config = require('../config.json');
+var config = require('../config');
 var myOrgName = config.fabric.orgName
 var log4js = require('log4js');
 var logger = log4js.getLogger('chaincodeTrigger');
@@ -18,8 +20,9 @@ logger.setLevel(config.gateway.logLevel);
 var fs = require('fs')
 var Promise = require('bluebird')
 var path = require('path')
-var ORGS = hfc.getConfigSetting('network-config');
-var channelConfig = hfc.getConfigSetting('channelConfig')
+var networkConfig = require('./networkConfig');
+var ORGS = networkConfig.getNetworkConfig('network-config');
+var channelConfig = networkConfig.getChannelConfig('channelConfig')
 var grpc = require('grpc')
 var _chaincodeDataProto = grpc.load(__dirname + '/protos/peer/chaincode_data.proto').protos
 var eventDefaultTime = config.fabric.eventWaitTime.default
@@ -79,7 +82,7 @@ function registarTxPromisesAny(ehs, txID, timeout) {
 
                 if (code !== 'VALID') {
                     logger.error('The chaincode  transaction was invalid, code = ' + code);
-                    reject();
+                    reject('The chaincode  transaction was invalid, code = ' + code);
                 } else {
                     resolve();
                 }
@@ -92,25 +95,28 @@ function registarTxPromisesAny(ehs, txID, timeout) {
 }
 
 
-var installChaincode = function(channelName, chaincodeName, sourceType, chaincodePath, chaincodeVersion, userContext, opt) {
+var installChaincode = function(channelName, chaincodeName, sourceType, chaincodePath, chaincodeVersion, langType, userContext, opt) {
     var targets = []
     if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
-        if (opt) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+        if (opt && opt.targetList) {
+            targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
         }
     }
     logger.info('start to install chaincode on peers')
     logger.debug(targets)
+    if (langType == 'node') {
+        chaincodePath = path.resolve(__dirname, '../nodePath', chaincodePath)
+    }
     var request = {
         targets: targets,
         chaincodePath: chaincodePath,
         chaincodeId: chaincodeName,
         chaincodeVersion: chaincodeVersion,
-
+        chaincodeType: langType
     };
     if (sourceType == 'package') {
         request.chaincodePackage = fs.readFileSync(path.join(process.env.GOPATH, 'src', chaincodePath))
@@ -120,7 +126,7 @@ var installChaincode = function(channelName, chaincodeName, sourceType, chaincod
     return requestPlugin.getPluginAndProcess('install', request, opt).then(() => {
         return client.installChaincode(request)
     }).then((results) => {
-        let proposalGood = Sender.checkProposal(results)
+        let proposalGood = Sender.checkProposal(null, results)
         if (proposalGood) {
             logger.info(util.format('Successfully sent install Proposal and received ProposalResponse'));
             logger.debug('\nSuccessfully Installed chaincode on organization ' + myOrgName + '\n');
@@ -137,6 +143,7 @@ var installChaincode = function(channelName, chaincodeName, sourceType, chaincod
 //send the instantiate request and return the status, we can not get responese from the chaincode because
 // the chaicnode was executed by lscc but send the lscc's responese not the chaincode's one
 var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion, functionName, args, userContext, opt) {
+    opt = opt || {}
     logger.info('start to instantiate chaincode')
     logger.debug('')
     var tx_id = null
@@ -149,10 +156,12 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
     if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
-        if (opt.targetList) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+        if (opt && opt.targetList) {
+            logger.debug('opt has targetList, use get by opt');
+            targets = peers.getTargetsByOpt(opt.targetList)
+            logger.debug(targets)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, 'all', 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, 'all', 'e')
         }
     }
     logger.debug('instantiate targest : ' + JSON.stringify(targets))
@@ -168,7 +177,6 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
 
 
     if (opt) {
-        logger.debug('request has endorsement policy')
         if (opt['endorsement-policy']) {
             request['endorsement-policy'] = opt['endorsement-policy']
         }
@@ -178,15 +186,19 @@ var instantiateChaincode = function(channelName, chaincodeName, chaincodeVersion
         client._userContext = userContext;
         return channel.sendInstantiateProposal(request)
     }).then((results) => {
-        var proposalGood = Sender.checkProposal(results)
+        var compareResult;
+        compareResult = Sender.checkProposal(channel, results)
         logger.debug('checking instantiate proposal')
-        if (proposalGood) {
+        if (typeof compareResult != 'string') {
             return sendToCommit(results, tx_id, channel, userContext, 'instantiate').then(() => {
                 return util.format("Initiatiate chaincode %s at channel %s successful", chaincodeName, channelName)
             })
 
         } else {
             let response = Sender.makeProposalResponse(targets, results[0], 'instantiate')
+            response.push({
+                compareResult
+            })
             logger.error(response)
             return Promise.reject(response)
         }
@@ -201,7 +213,7 @@ function sendToCommit(results, txID, channel, userContext, type) {
         header: results[2]
     };
     var deployId = txID.getTransactionID();
-    var ehs = helper.getOrgEventHubs(userContext, channel.getName())
+    var ehs = eventHub.getOrgEventHubs(userContext, channel.getName())
     var expireTime;
     if (type == 'instantiate' || type == 'upgrade') {
         expireTime == config.fabric.eventWaitTime.instantiate
@@ -227,10 +239,10 @@ var upgradeChaincode = function(channelName, chaincodeName, chaincodeVersion, fu
     if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
-        if (opt) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+        if (opt && opt.targetList) {
+            targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, 'all', 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, 'all', 'e')
         }
     }
     // send proposal to endorser
@@ -251,14 +263,19 @@ var upgradeChaincode = function(channelName, chaincodeName, chaincodeVersion, fu
         client._userContext = userContext;
         return channel.sendUpgradeProposal(request)
     }).then((results) => {
-        var all_good = Sender.checkProposal(results)
+        var compareResult;
+
+        compareResult = Sender.checkProposal(channel, results)
         logger.debug('checking upgrade proposal')
-        if (all_good) {
+        if (typeof compareResult != 'string') {
             return sendToCommit(results, tx_id, channel, userContext, 'upgrade').then(() => {
                 return util.format("Initiatiate chaincode %s at channel %s successful", chaincodeName, channelName)
             })
         } else {
             let response = Sender.makeProposalResponse(targets, results[0], 'instantiate')
+            response.push({
+                compareResult
+            })
             logger.error(response)
             return Promise.reject(response)
 
@@ -277,10 +294,10 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
     if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
-        if (opt) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+        if (opt && opt.targetList) {
+            targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, 'all', 'e', opt)
+            targets = peers.getChannelTargetByPeerType(channelName, 'all', 'e', opt)
         }
     }
     var request = {
@@ -296,21 +313,29 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
         return channel.sendTransactionProposal(request)
     }).then((results) => {
         results[0].forEach((response) => {
+            // logger.debug(response.response.payload.encodeJSON());
+            // logger.debug(response.encodeJSON())
             if (response.response) {
                 proposalResuls.push(response.response.payload.toString())
             }
         })
-        var proposalGood = Sender.checkProposal(results, true)
-        if (proposalGood) {
+        var compareResult = Sender.checkProposal(channel, results)
+        if (typeof compareResult != 'string') {
             return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
                 if (checkAllResult(proposalResuls)) {
                     return proposalResuls[0]
                 } else {
                     return "tx has commite but some peer's response not the same" + proposalResuls
                 }
+            }).catch((e) => {
+                return Promise.reject(e)
             })
         } else {
             let response = Sender.makeProposalResponse(targets, results[0], 'invoke')
+            console.log(compareResult)
+            response.push({
+                compareResult: compareResult
+            })
             logger.error(response)
             return Promise.reject(response)
         }
@@ -319,6 +344,7 @@ var invokeChaincode = function(channelName, chaincodeName, fcn, args, userContex
 };
 var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, userContext, opt) => {
     var channel = channels.getChannel(channelName)
+    let compareResult
     client._userContext = userContext;
     var tx_id = client.newTransactionID();
     var proposalResuls = [];
@@ -338,17 +364,30 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
         logger.debug('get policy')
         logger.debug(policy)
         sender = new Sender(channel, policy, 'invoke', userContext, request, tx_id, opt)
-        return sender.initExecute()
+        return sender.initExecute().catch((e) => {
+            logger.error(e)
+            if (!(e.toString().indexOf('policy failed') > -1)) {
+                let response = sender.makeProposalResponse()
+                return Promise.reject(response)
+            } else {
+                return Promise.reject(e)
+            }
+
+        })
     }).then((results) => {
         logger.debug('results is ' + results)
+        logger.debug('in the finish section')
         results[0].forEach((response) => {
             if (response.response) {
                 proposalResuls.push(response.response.payload.toString())
             }
         })
-        // return 'endorse good'
-        if (!Sender.checkProposal(results)) {
+        compareResult = Sender.checkProposal(channel, results)
+        if (typeof compareResult == 'string') {
             let response = sender.makeProposalResponse()
+            response.push({
+                compareResult: compareResult
+            })
             return Promise.reject(JSON.stringify(response))
         } else {
             return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
@@ -359,16 +398,6 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
                 }
             })
         }
-    }).catch((e) => {
-        logger.error(e)
-        if (!(e.toString().indexOf('policy failed') > -1)) {
-            let response = sender.makeProposalResponse()
-            return Promise.reject(response)
-
-        } else {
-            return Promise.reject(e)
-        }
-
     })
 }
 var getChaincodePolicy = (channelName, chaincodeName, userContext) => {
@@ -378,7 +407,7 @@ var getChaincodePolicy = (channelName, chaincodeName, userContext) => {
     logger.debug(peerList)
     for (let peerIndex in peerList) {
         logger.debug('check peerInfo', peerList[peerIndex])
-        let peerStatus = helper.getPeerAliveState(peerList[peerIndex].name, myOrgName)
+        let peerStatus = peers.getPeerAliveState(peerList[peerIndex].name, myOrgName)
         logger.debug(peerStatus)
         if (peerStatus) {
             logger.debug('get chaincode endorsement policy from %s', peerList[peerIndex].name)
@@ -401,10 +430,10 @@ var queryChaincode = function(channelName, chaincodeName, fcn, args, userContext
     if (config.fabric.mode == "dev") {
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
-        if (opt) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+        if (opt && opt.targetList) {
+            targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
         }
     // TO DO use endorsePolicy to assign target
     }
@@ -448,9 +477,9 @@ var queryHistory = function(channelName, chaincodeName, fcn, args, userContext, 
         targets.push(client.newPeer('grpc://localhost:7051'))
     } else {
         if (opt) {
-            targets = helper.getTargetsByOpt(opt.targetList)
+            targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = helper.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
         }
     // TO DO use endorsePolicy to assign target
     }

@@ -161,6 +161,7 @@ module.exports.joinChannel = (req, res, next) => {
         errMsg += " Missing channelName "
     }
     var user = body.user
+    var opt = body.opt || {}
     if (!user) {
         errMsg += "Missing user obj"
     }
@@ -172,7 +173,7 @@ module.exports.joinChannel = (req, res, next) => {
             .matchUserDb(user.enrollID, user.enrollSecret)
             .then((result) => {
                 var userObj = hyUtil.user.getUser(user.enrollID)
-                return hyUtil.channelAPI.joinChannel(channelName, userObj)
+                return hyUtil.channelAPI.joinChannel(channelName, userObj, opt.peerName)
             }).then((result) => {
             response.returnSuccess(result, res)
         }, (err) => {

@@ -21,10 +21,12 @@ var removeChaincodeInfo = (peerName, condition) => {
 
     return chaincodeDB.remove(condition)
 }
-var getChaincodeInfosByChannel = (peerNme, channelName) => {
+var getChaincodeInfosByChannel = (peerName, channelName) => {
     let chaincodeDB = mongo.getDbs(peerName, DBName)
     return chaincodeDB.find({
         channelName: channelName
+    }).then((res)=>{
+        return res
     })
 }
 var getChaincodeByName = (peerName, channelName, chaincodeName) => {
