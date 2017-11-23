@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+
+option go_package = "github.com/hyperledger/fabric/protos/common";
+option java_package = "org.hyperledger.fabric.protos.common";
+
+package common;
+
+message SignRequestSignature {
+    bytes signature = 1 ;
+    bytes sign_request_header = 2;
+}
+
+message SignRequestHeader {
+    string uuid = 1;
+    bytes creator = 2;
+}
+
+message ChannelConfigRequestContent {
+    string channel_name = 1;
+    bytes config_update = 2;
+}

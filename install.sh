@@ -2,6 +2,16 @@ echo "//////////////////////////////////"
 echo "Start to intall node js paackagese"
 echo "//////////////////////////////////"
 npm install
+echo
+echo "//////////////////////////////////"
+echo "copy protos to hyperutil folder"
+echo "//////////////////////////////////"
+cp -r ./node_modules/fabric-client/lib/protos ./hyperledgerUtil/
+echo
+echo "//////////////////////////////////"
+echo "copy protos to hyperutil folder finish"
+echo "//////////////////////////////////"
+echo
 echo "//////////////////////////////////"
 echo "   start to build configtxlator"
 echo "//////////////////////////////////"
@@ -9,3 +19,6 @@ GOPATH=$(pwd)/gopath
 echo $GOPATH
 cd gopath/src/configtxlator
 GOPATH=$GOPATH go build
+echo "//////////////////////////////////"
+echo "   finish to build configtxlator"
+echo "//////////////////////////////////"

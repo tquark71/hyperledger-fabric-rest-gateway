@@ -145,7 +145,7 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "owtvwihEdWKIZlUgKheZdcvAz0o=",
+			"checksumSHA1": "mzQWIAhZgWx9mO+iA3PGWLj3Oh0=",
 			"path": "github.com/hyperledger/fabric/bccsp/pkcs11",
 			"revision": ""
 		},
@@ -205,7 +205,7 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "24p/mdffgoV9f2uI9nVt9wiinJg=",
+			"checksumSHA1": "CIGYbIHiei3xMU56V/I7e1Qi9XY=",
 			"path": "github.com/hyperledger/fabric/core/chaincode/platforms/golang",
 			"revision": ""
 		},
@@ -220,12 +220,12 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "1I4IiijH4KIe0R/Mk7ljwTyRLaM=",
+			"checksumSHA1": "Cxq7QDTXyZ6LtJNnGOsN2BpARek=",
 			"path": "github.com/hyperledger/fabric/core/chaincode/shim",
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "zBtHiBt6cJDXjMkjS1T4+QTdFNg=",
+			"checksumSHA1": "Pa58GiZnzsZxszujyh9OMD+syg8=",
 			"path": "github.com/hyperledger/fabric/core/comm",
 			"revision": ""
 		},
@@ -240,7 +240,7 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "uaEoD6K7kpqojDLpxMmap1zLXvY=",
+			"checksumSHA1": "X5gtCuxBQY4arc2EQWMWijtn/vM=",
 			"path": "github.com/hyperledger/fabric/msp",
 			"revision": ""
 		},
@@ -255,7 +255,7 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "cg63X3IdNJT+FGhMw1tGj1YHhh8=",
+			"checksumSHA1": "ciNXuY83MLQ3g1x+MX2DSSg/vD4=",
 			"path": "github.com/hyperledger/fabric/protos/msp",
 			"revision": ""
 		},
@@ -265,7 +265,7 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "hOTTb+dgE7uMZKU6LEaA1YZM1go=",
+			"checksumSHA1": "hFXFhsgJ2wOR65qgd4O+d5XPk0o=",
 			"path": "github.com/hyperledger/fabric/protos/utils",
 			"revision": ""
 		},
@@ -492,5 +492,5 @@
 			"revision": ""
 		}
 	],
-	"rootPath": "chaincodes/testCC"
+	"rootPath": "chaincodes/example_ccv5"
 }

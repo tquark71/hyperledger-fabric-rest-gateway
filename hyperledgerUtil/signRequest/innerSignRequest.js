@@ -15,7 +15,7 @@ var logger = log4js.getLogger('util/innerSignRequest');
 var helper = require('../helper');
 logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
-var _signReqestProto = grpc.load(path.join(__dirname, '../protos/signRequest/signRequest.proto')).common
+var _signReqestProto = grpc.load(path.join(__dirname, '../addedProto/signRequest.proto')).common
 var _identityProto = grpc.load(path.join(__dirname, '../protos/msp/identities.proto')).msp;
 var _commonProto = grpc.load(path.join(__dirname, '../protos/common/common.proto')).common;
 var _configtxProto = grpc.load(path.join(__dirname, '../protos/common/configtx.proto')).common;

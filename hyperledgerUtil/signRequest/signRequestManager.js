@@ -12,7 +12,7 @@ var grpc = require('grpc');
 var _commomProto = grpc.load(path.join(__dirname, '../protos/common/policies.proto')).common;
 var _identityProto = grpc.load(path.join(__dirname, '../protos/msp/identities.proto')).msp;
 var _configtxProto = grpc.load(path.join(__dirname, '../protos/common/configtx.proto')).common;
-var _signReqestProto = grpc.load(path.join(__dirname, '../protos/signRequest/signRequest.proto')).common
+var _signReqestProto = grpc.load(path.join(__dirname, '../addedProto/signRequest.proto')).common
 logger.setLevel(config.gateway.logLevel);
 var helper = require('../helper')
 var DB = require('../../Db')

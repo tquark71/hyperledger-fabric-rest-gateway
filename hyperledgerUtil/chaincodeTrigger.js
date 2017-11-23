@@ -24,7 +24,7 @@ var networkConfig = require('./networkConfig');
 var ORGS = networkConfig.getNetworkConfig('network-config');
 var channelConfig = networkConfig.getChannelConfig('channelConfig')
 var grpc = require('grpc')
-var _chaincodeDataProto = grpc.load(__dirname + '/protos/peer/chaincode_data.proto').protos
+var _chaincodeDataProto = grpc.load(__dirname + '/addedProto/chaincode_data.proto').protos
 var eventDefaultTime = config.fabric.eventWaitTime.default
 
 // used for outside added function to process request

@@ -18,24 +18,14 @@ var peers = require('./peers');
 var constants = require('../constants')
 logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
-var _policiesProto = grpc
-    .load(__dirname + '/protos/common/policies.proto')
-    .common;
-var _chaincodeProto = grpc
-    .load(__dirname + '/protos/peer/chaincode.proto')
-    .protos;
+var _policiesProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
+var _chaincodeProto = grpc.load(__dirname + '/protos/peer/chaincode.proto').protos;
 var _chaincodeDataProto = grpc
     .load(__dirname + '/addedProto/chaincode_data.proto')
     .protos;
-var _commomProto = grpc
-    .load(__dirname + '/protos/common/policies.proto')
-    .common;
-var _configtxProto = grpc
-    .load(__dirname + '/protos/common/configtx.proto')
-    .common;
-var _mspPrincipalProto = grpc
-    .load(__dirname + '/protos/msp/msp_principal.proto')
-    .common;
+var _commomProto = grpc.load(__dirname + '/protos/common/policies.proto').common;
+var _configtxProto = grpc.load(__dirname + '/protos/common/configtx.proto').common;
+var _mspPrincipalProto = grpc.load(__dirname + '/protos/msp/msp_principal.proto').common;
 var networkConfig = require('./networkConfig');
 var ORGS = networkConfig.getNetworkConfig('network-config');
 var eventDefaultTime = config.fabric.eventWaitTime.default
@@ -60,9 +50,8 @@ var getChaincodeData = (peerName, channelName, chaincodeName, userContext) => {
         fcn: 'getccdata',
         args: [channelName, chaincodeName]
     };
-    return Channel
-        .sendTransactionProposal(request, channelName, client)
-        .then(function (results) {
+    return Channel.sendTransactionProposal(request, channelName, client).then(
+        function(results) {
             var responses = results[0];
             logger.debug('queryChaincodeData - got response');
             if (responses && Array.isArray(responses)) {
@@ -76,18 +65,12 @@ var getChaincodeData = (peerName, channelName, chaincodeName, userContext) => {
                 }
                 if (response.response) {
                     logger.debug('queryChaincodeData - response status :: %d', response.response.status);
-                    var chaincodeData = _chaincodeDataProto
-                        .chaincodeData
-                        .decode(response.response.payload);
-                    var signaturePolicyEnvelope = _policiesProto
-                        .SignaturePolicyEnvelope
-                        .decode(chaincodeData.policy)
+                    var chaincodeData = _chaincodeDataProto.chaincodeData.decode(response.response.payload);
+                    var signaturePolicyEnvelope = _policiesProto.SignaturePolicyEnvelope.decode(chaincodeData.policy)
                     var policy = signaturePolicyEnvelope.policy;
                     var identities = signaturePolicyEnvelope.identities;
                     identities.forEach((identity, index) => {
-                        identities[index].principal = _mspPrincipalProto
-                            .MSPRole
-                            .decode(identity.principal.toBuffer())
+                        identities[index].principal = _mspPrincipalProto.MSPRole.decode(identity.principal.toBuffer())
                     })
                     chaincodeData.policy = signaturePolicyEnvelope
                     logger.debug('queryChaincodeData result:' + chaincodeData);
@@ -97,10 +80,12 @@ var getChaincodeData = (peerName, channelName, chaincodeName, userContext) => {
                 return Promise.reject(response);
             }
             return Promise.reject(new Error('Payload results are missing from the query'));
-        })
+        }
+    )
+
 
 }
-var getInstalledChaincodes = function (channelName, peerName, type, userContext) {
+var getInstalledChaincodes = function(channelName, peerName, type, userContext) {
     client._userContext = userContext;
     if (type != 'installed') {
         channels.getChannel(channelName)
@@ -126,8 +111,7 @@ var getInstalledChaincodes = function (channelName, peerName, type, userContext)
             }
             var details = [];
             for (let i = 0; i < response.chaincodes.length; i++) {
-                // logger.debug('name: ' + response.chaincodes[i].name + ', version: ' +
-                // response.chaincodes[i].version + ', path: ' + response.chaincodes[i].path);
+                // logger.debug('name: ' + response.chaincodes[i].name + ', version: ' + response.chaincodes[i].version + ', path: ' + response.chaincodes[i].path);
                 details.push(response.chaincodes[i]);
             }
             return details;
@@ -136,12 +120,12 @@ var getInstalledChaincodes = function (channelName, peerName, type, userContext)
             return Promise.reject('response is null')
         }
     }, (err) => {
-        logger.error('Failed to send query due to error: ' + err.stack
-            ? err.stack
-            : err);
-        return Promise.reject('Failed to send query due to error: ' + err.stack
-            ? err.stack
-            : err)
+        logger.error('Failed to send query due to error: ' + err.stack ?
+            err.stack :
+            err);
+        return Promise.reject('Failed to send query due to error: ' + err.stack ?
+            err.stack :
+            err)
     })
 };
 
@@ -151,7 +135,7 @@ var initChannel = (channelName, userContext) => {
     return channels[channelName].initialize()
 }
 
-var getBlockActionsByNumber = function (channelName, peerName, blockNumber, userContext) {
+var getBlockActionsByNumber = function(channelName, peerName, blockNumber, userContext) {
     var channel = channels.getChannel(channelName)
     var target;
     target = peers.getPeerByName(peerName);
@@ -167,7 +151,7 @@ var getBlockActionsByNumber = function (channelName, peerName, blockNumber, user
 }
 
 // query a block by number and return a decoded block info
-var getBlockByNumber = function (channelName, peerName, blockNumber, userContext) {
+var getBlockByNumber = function(channelName, peerName, blockNumber, userContext) {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     var target = peers.getPeerByName(peerName)
@@ -175,28 +159,25 @@ var getBlockByNumber = function (channelName, peerName, blockNumber, userContext
         blockNumber = parseInt(blockNumber)
     } catch (e) {}
     client.setUserContext(userContext, true)
-    return channel
-        .queryBlock(blockNumber, target)
-        .then((response_payloads) => {
-            if (response_payloads) {
+    return channel.queryBlock(blockNumber, target).then((response_payloads) => {
+        if (response_payloads) {
 
-                return response_payloads;
+            return response_payloads;
 
-            } else {
-                logger.error('response_payloads is null');
-                return Promise.reject('response_payloads is null');
-            }
-        })
+        } else {
+            logger.error('response_payloads is null');
+            return Promise.reject('response_payloads is null');
+        }
+    })
 };
 
-var getTransactionByID = function (channeName, peerName, trxnID, userContext) {
+var getTransactionByID = function(channeName, peerName, trxnID, userContext) {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     var target = peers.getPeerByName(peerName);
     client.setUserContext(userContext, true)
 
-    return channel
-        .queryTransaction(trxnID, target)
+    return channel.queryTransaction(trxnID, target)
         .then((response_payloads) => {
             if (response_payloads) {
                 logger.debug(response_payloads);
@@ -208,7 +189,7 @@ var getTransactionByID = function (channeName, peerName, trxnID, userContext) {
         });
 };
 
-var getBlockByHash = function (channelName, peerName, hash, userContext) {
+var getBlockByHash = function(channelName, peerName, hash, userContext) {
     channels.getChannel(channelName);
     var channel = channels[channelName];
     var target = peers.getPeerByName(peerName);
@@ -224,14 +205,13 @@ var getBlockByHash = function (channelName, peerName, hash, userContext) {
     });
 };
 
-var getChainInfo = function (channelName, peerName, userContext) {
+var getChainInfo = function(channelName, peerName, userContext) {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     var target = peers.getPeerByName(peerName)
     client.setUserContext(userContext, true);
 
-    return channel
-        .queryInfo(target)
+    return channel.queryInfo(target)
         .then((blockchainInfo) => {
             if (blockchainInfo) {
                 // logger.debug(blockchainInfo);
@@ -243,11 +223,10 @@ var getChainInfo = function (channelName, peerName, userContext) {
         });
 };
 
-var getChannels = function (peerName, userContext) {
+var getChannels = function(peerName, userContext) {
     var target = peers.getPeerByName(peerName);
     client.setUserContext(userContext, true);
-    return client
-        .queryChannels(target)
+    return client.queryChannels(target)
         .then((response) => {
             if (response) {
                 var channelNames = [];
@@ -264,7 +243,7 @@ var getChannels = function (peerName, userContext) {
 
 };
 
-var createChannel = function (channelName, sourceType, source, userContext) {
+var createChannel = function(channelName, sourceType, source, userContext) {
     // read in the envelope for the channel config raw bytes
     client._userContext = userContext;
     var envelope;
@@ -287,8 +266,7 @@ var createChannel = function (channelName, sourceType, source, userContext) {
         txId: client.newTransactionID()
     };
     // send to orderer
-    return client
-        .createChannel(request)
+    return client.createChannel(request)
         .then((response) => {
             logger.debug(' response ::%j', response);
             if (response && response.status === 'SUCCESS') {
@@ -300,11 +278,12 @@ var createChannel = function (channelName, sourceType, source, userContext) {
             }
         });
 };
-var joinChannel = function (channelName, userContext, peerName) {
+var joinChannel = function(channelName, userContext, peerName) {
     channels.getChannel(channelName)
     client._userContext = userContext;
 
     logger.info(util.format('Calling peers in organization "%s" to join the channel', myOrgName));
+
 
     var channel = channels[channelName]
     var eventhubs = [];
@@ -314,8 +293,7 @@ var joinChannel = function (channelName, userContext, peerName) {
         txId: tx_id
     };
 
-    return channel
-        .getGenesisBlock(request)
+    return channel.getGenesisBlock(request)
         .then((genesis_block) => {
             tx_id = client.newTransactionID();
             var targets;
@@ -359,38 +337,37 @@ var joinChannel = function (channelName, userContext, peerName) {
             client._userContext = userContext;
             let sendPromise = channel.joinChannel(request);
             return Promise.all([sendPromise].concat(eventPromises))
-        })
-        .then((results) => {
-            logger.debug(util.format('Join Channel R E S P O N S E : %j', results));
-            if (results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
-                logger.info(util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName));
-                eventHub.closeEhs(eventhubs)
+        }).then((results) => {
+        logger.debug(util.format('Join Channel R E S P O N S E : %j', results));
+        if (results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
+            logger.info(util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName));
+            eventHub.closeEhs(eventhubs)
 
-                return util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName);
-            } else {
-                logger.error(' Failed to join channel');
-                eventHub.closeEhs(eventhubs)
-                return Promise.reject('Failed to join channel')
-            }
-        });
+            return util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName);
+        } else {
+            logger.error(' Failed to join channel');
+            eventHub.closeEhs(eventhubs)
+            return Promise.reject('Failed to join channel')
+        }
+    });
 };
+
 
 var getChannelConfig = (channelName, userContext, writePath) => {
     channels.getChannel(channelName)
     var channel = channels[channelName]
     client._userContext = userContext;
-    return channel
-        .getChannelConfig()
-        .then((configEnvolop) => {
-            configEnvolop = configEnvolop.toBuffer()
-            if (writePath) {
+    return channel.getChannelConfig().then((configEnvolop) => {
+        configEnvolop = configEnvolop.toBuffer()
+        if (writePath) {
 
-                fs.writeFileSync(path.resolve(__dirname, '../artifacts/', writePath), configEnvolop.toBuffer())
-            }
-            return Promise.resolve(configEnvolop)
-        })
+            fs.writeFileSync(path.resolve(__dirname, '../artifacts/', writePath), configEnvolop.toBuffer())
+        }
+        return Promise.resolve(configEnvolop)
+    })
 
 }
+
 
 var updateChannel = (channelName, sourceType, source, userContext) => {
     var channel = channels.getChannel(channelName)
@@ -411,76 +388,70 @@ var updateChannel = (channelName, sourceType, source, userContext) => {
         promiseArr.push(Promise.resolve())
 
     } else if (sourceType == 'signRequest') {
-        let p = signRequestManager
-            .getInnerSignRequestObj(source)
-            .then((signRequest) => {
-                if (!signRequest.isFullFilled()) {
-                    errMsg = "signRequest have not fullfiled";
-                    throw new Error(errMsg)
+        let p = signRequestManager.getInnerSignRequestObj(source).then((signRequest) => {
+            if (!signRequest.isFullFilled()) {
+                errMsg = "signRequest have not fullfiled";
+                throw new Error(errMsg)
 
-                } else if (signRequest._type != constants.CHANNEL_CONFIG_REQUEST) {
-                    errMsg = `${source} is not a channel config sign request`
-                    throw new Error(errMsg)
+            } else if (signRequest._type != constants.CHANNEL_CONFIG_REQUEST) {
+                errMsg = `${source} is not a channel config sign request`
+                throw new Error(errMsg)
 
-                } else if (signRequest.content.channelName != channelName) {
-                    errMsg = `${source} is not for the channel ${channelName}`
-                    throw new Error(errMsg)
-                } else {
-                    logger.debug('update channel by sign Request')
-                    configUpdate = signRequest.content.configUpdate;
-                    signRequest
-                        ._responses
-                        .forEach((signatureBuffer, index) => {
-                            let proto_config_signature = _configtxProto
-                                .ConfigSignature
-                                .decode(signatureBuffer);
-                            signatures.push(proto_config_signature)
-                        })
-                    logger.debug("configUpdate");
-                    logger.debug(configUpdate)
-                    // logger.debug('signatures'); logger.debug(signatures)
-                    return Promise.resolve()
-                }
-            })
+            } else if (signRequest.content.channelName != channelName) {
+                errMsg = `${source} is not for the channel ${channelName}`
+                throw new Error(errMsg)
+            } else {
+                logger.debug('update channel by sign Request')
+                configUpdate = signRequest.content.configUpdate;
+                signRequest._responses.forEach((signatureBuffer, index) => {
+                    let proto_config_signature = _configtxProto.ConfigSignature.decode(signatureBuffer);
+                    signatures.push(proto_config_signature)
+                })
+                logger.debug("configUpdate");
+                logger.debug(configUpdate)
+                // logger.debug('signatures');
+                // logger.debug(signatures)
+                return Promise.resolve()
+            }
+        })
         promiseArr.push(p)
+
 
     }
 
     if (!errMsg) {
         console.log(promiseArr)
-        return Promise
-            .all(promiseArr)
-            .then(() => {
-                console.log('in the all')
-                client._userContext = userContext;
-                if (signatures.length == 0) {
-                    signatures = client.signChannelConfig(configUpdate);
+        return Promise.all(promiseArr).then(() => {
+            console.log('in the all')
+            client._userContext = userContext;
+            if (signatures.length == 0) {
+                signatures = client.signChannelConfig(configUpdate);
+            }
+            let request = {
+                // envelope: envelope,
+                config: configUpdate,
+                signatures: signatures,
+                name: channelName,
+                orderer: channels[channelName].getOrderers()[0],
+                txId: client.newTransactionID()
+            };
+            // console.log('request');
+            // // console.log(request)
+
+            client._userContext = userContext;
+            return client.updateChannel(request).then((response) => {
+                logger.debug(' response ::%j', response);
+                if (response && response.status === 'SUCCESS') {
+                    logger.debug('Successfully update the channel.');
+                    let response = 'Channel \'' + channelName + '\' updated Successfully'
+                    return response;
+                } else {
+                    return Promise.reject('Failed to update the channel \'' + channelName + '\' \n\n')
                 }
-                let request = {
-                    // envelope: envelope,
-                    config: configUpdate,
-                    signatures: signatures,
-                    name: channelName,
-                    orderer: channels[channelName].getOrderers()[0],
-                    txId: client.newTransactionID()
-                };
-                // console.log('request'); // console.log(request)
 
-                client._userContext = userContext;
-                return client
-                    .updateChannel(request)
-                    .then((response) => {
-                        logger.debug(' response ::%j', response);
-                        if (response && response.status === 'SUCCESS') {
-                            logger.debug('Successfully update the channel.');
-                            let response = 'Channel \'' + channelName + '\' updated Successfully'
-                            return response;
-                        } else {
-                            return Promise.reject('Failed to update the channel \'' + channelName + '\' \n\n')
-                        }
-
-                    })
             })
+        })
+
 
     }
 }

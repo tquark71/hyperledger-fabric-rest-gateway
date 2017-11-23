@@ -9,14 +9,10 @@ var Channel = require('fabric-client/lib/Channel');
 var clientUtils = require('fabric-client/lib/client-utils.js');
 var grpc = require('grpc');
 var client = require('./client')
-var _ccProto = grpc
-    .load(__dirname + '/protos/peer/chaincode.proto')
-    .protos;
-var _commonProto = grpc
-    .load(__dirname + '/protos/common/common.proto')
-    .common;
-// replace the src code Channel static functin sendTransactionProposal so we can
-// send same noce to the endorse
+var _ccProto = grpc.load(__dirname + '/protos/peer/chaincode.proto').protos;
+var _commonProto = grpc.load(__dirname + '/protos/common/common.proto').common;
+//replace the src code Channel static functin sendTransactionProposal so we can send same noce
+//to the endorse
 Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
     // Verify that a Peer has been added
     var errorMsg = null;
@@ -40,11 +36,8 @@ Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
     }
 
     var args = [];
-    args.push(Buffer.from(request.fcn
-        ? request.fcn
-        : 'invoke', 'utf8'));
-    // logger.debug('sendTransactionProposal - adding function arg:%s', request.fcn
-    // ? request.fcn : 'invoke');
+    args.push(Buffer.from(request.fcn ? request.fcn : 'invoke', 'utf8'));
+    // logger.debug('sendTransactionProposal - adding function arg:%s', request.fcn ? request.fcn : 'invoke');
 
     for (let i = 0; i < request.args.length; i++) {
         // logger.debug('sendTransactionProposal - adding arg:%s', request.args[i]);
@@ -55,8 +48,7 @@ Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
         // logger.debug('sendTransactionProposal - adding the argument :: argbytes');
         args.push(request.argbytes);
     } else {
-        // logger.debug('sendTransactionProposal - not adding the argument ::
-        // argbytes');
+        // logger.debug('sendTransactionProposal - not adding the argument :: argbytes');
     }
     let invokeSpec = {
         type: _ccProto.ChaincodeSpec.Type.GOLANG,
@@ -72,7 +64,13 @@ Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
 
     var userContext = clientContext.getUserContext();
 
-    var channelHeader = clientUtils.buildChannelHeader(_commonProto.HeaderType.ENDORSER_TRANSACTION, channelId, request.txId.getTransactionID(), null, request.chaincodeId);
+    var channelHeader = clientUtils.buildChannelHeader(
+        _commonProto.HeaderType.ENDORSER_TRANSACTION,
+        channelId,
+        request.txId.getTransactionID(),
+        null,
+        request.chaincodeId
+    );
 
     if (opt) {
         header = opt.header || clientUtils.buildHeader(userContext.getIdentity(), channelHeader, request.txId.getNonce());
@@ -83,18 +81,19 @@ Channel.sendTransactionProposal = (request, channelId, clientContext, opt) => {
 
     }
     let signed_proposal = clientUtils.signProposal(userContext.getSigningIdentity(), proposal);
-    return clientUtils
-        .sendPeersProposal(request.targets, signed_proposal)
-        .then(function (responses) {
-            return Promise.resolve([responses, proposal, header]);
-        })
-        .catch(function (err) {
-            logger.error('Failed Proposal. Error: %s', err.stack
-                ? err.stack
-                : err);
+    return clientUtils.sendPeersProposal(request.targets, signed_proposal)
+        .then(
+            function(responses) {
+                return Promise.resolve([responses, proposal, header]);
+            }
+    ).catch(
+        function(err) {
+            logger.error('Failed Proposal. Error: %s', err.stack ? err.stack : err);
             return Promise.reject(err);
-        });
+        }
+    );
 }
+
 
 const ENDORSER_TRANSACTION = 3
 var sender = class {
@@ -126,7 +125,9 @@ var sender = class {
         this.channelHeader = clientUtils.buildChannelHeader(ENDORSER_TRANSACTION, channel.getName(), this.txID.getTransactionID(), null, this.request.chaincodeId)
         this.header = clientUtils.buildHeader(userContext.getIdentity(), this.channelHeader, this.txID.getNonce())
         this.proposal = clientUtils.buildProposal(this.invokeSpec, this.header, this.request.transientMap)
-        this.results = [[], this.proposal, this.header]
+        this.results = [
+            [], this.proposal, this.header
+        ]
         this.proposalOpt = {
             header: this.header,
             proposal: this.proposal
@@ -134,12 +135,8 @@ var sender = class {
     }
     makeArgs() {
         var args = [];
-        args.push(Buffer.from(this.request.fcn
-            ? this.request.fcn
-            : 'invoke', 'utf8'));
-        logger.debug('sendTransactionProposal - adding function arg:%s', this.request.fcn
-            ? this.request.fcn
-            : 'invoke');
+        args.push(Buffer.from(this.request.fcn ? this.request.fcn : 'invoke', 'utf8'));
+        logger.debug('sendTransactionProposal - adding function arg:%s', this.request.fcn ? this.request.fcn : 'invoke');
 
         for (let i = 0; i < this.request.args.length; i++) {
             logger.debug('sendTransactionProposal - adding arg:%s', this.request.args[i]);
@@ -166,11 +163,9 @@ var sender = class {
     }
     initExecute() {
         // logger.debug('init policy is :' + JSON.stringify(this.initPolicy))
-        return this
-            .executeNOutOf(this.initPolicy.policy)
-            .catch((e) => {
-                return Promise.reject('try all method but can not fullfill the policy of chaincode')
-            })
+        return this.executeNOutOf(this.initPolicy.policy).catch((e) => {
+            return Promise.reject('try all method but can not fullfill the policy of chaincode')
+        })
     }
     executeNOutOf(policy) {
         // logger.debug('execute N out of policy : %s', JSON.stringify(policy))
@@ -189,34 +184,42 @@ var sender = class {
                 logger.debug('open a promise thread')
                 threadPromiseArr.push(this.endorseThread(progressInfo, policies))
             }
-            return Promise
-                .all(threadPromiseArr)
-                .then((results) => {
-                    logger.debug('all thread done, check results')
-                    logger.debug(results)
-                    var allDone = false;
-                    results.forEach((result) => {
-                        logger.debug(result)
-                        if (result == 'Done') {
-                            allDone = true
-                        }
-                    })
-                    logger.debug('all Done ' + allDone)
-                    if (allDone == true) {
-                        return this.results
-                    } else {
-                        return Promise.reject('all failed')
+            return Promise.all(threadPromiseArr).then((results) => {
+                logger.debug('all thread done, check results')
+                logger.debug(results)
+                var allDone = false;
+                results.forEach((result) => {
+                    logger.debug(result)
+                    if (result == 'Done') {
+                        allDone = true
                     }
-
                 })
+                logger.debug('all Done ' + allDone)
+                if (allDone == true) {
+                    return this.results
+                } else {
+                    return Promise.reject('all failed')
+                }
+
+            })
         }
-        // TO DO: use once mode to trigger the polices else if (this.executeType ==
-        // 'once') {     for (let i = 0; i < policies.length; i++) {
-        // threadPromiseArr.push(() => {             return
-        // this.executePolicy(policies[i]).catch((e) => {                 return new
-        // Promise((rs, rj) => {                     setTimeout(() => {
-        //        rj();                     }, this.expireTime)                 })
-        //       })         })     }     return Promise.some(threadPromiseArr, n) }
+        //TO DO: use once mode to trigger the polices
+        // else if (this.executeType == 'once') {
+        //     for (let i = 0; i < policies.length; i++) {
+        //         threadPromiseArr.push(() => {
+        //             return this.executePolicy(policies[i]).catch((e) => {
+        //                 return new Promise((rs, rj) => {
+        //                     setTimeout(() => {
+        //                         rj();
+        //                     }, this.expireTime)
+        //                 })
+
+        //             })
+        //         })
+
+        //     }
+        //     return Promise.some(threadPromiseArr, n)
+        // }
 
     }
     executeSignBy(policy) {
@@ -227,8 +230,9 @@ var sender = class {
     }
     endorseThread(progressInfo, policies) {
         logger.debug('start to endorseThread')
-        // now impelment method is open n time thread to reach the n we can add speed up
-        // mode that send all request at same time to try all method at one time
+        // now impelment method is open n time thread to reach the n
+        // we can add speed up mode that send all request at same time to
+        // try all method at one time
         if (progressInfo.number == 0) {
             return Promise.resolve('Done')
         } else {
@@ -238,68 +242,55 @@ var sender = class {
                 return Promise.resolve('all police has been try but can not reach the critiria')
             } else {
                 progressInfo.policiesIndex++;
-                return this
-                    .executePolicy(policies[policiesIndex])
-                    .then((res) => {
-                        progressInfo.number--;
-                        return this.endorseThread(progressInfo, policies)
-                    })
-                    .catch((e) => {
-                        return this.endorseThread(progressInfo, policies)
-                    })
+                return this.executePolicy(policies[policiesIndex]).then((res) => {
+                    progressInfo.number--;
+                    return this.endorseThread(progressInfo, policies)
+                }).catch((e) => {
+                    return this.endorseThread(progressInfo, policies)
+                })
             }
         }
     }
-    // constantly send the request to targets util any target have signed the
-    // proposal
+    // constantly send the request to targets util any target have signed the proposal
     iterativeSend(targets, sendFunc) {
         logger.debug('start iterative send')
-        return sender
-            .reorderTargets(targets)
-            .then((reTargets) => {
-                // logger.debug(reTargets)
-                return Promise.each(reTargets, (target) => {
-                    let request = JSON.parse(JSON.stringify(this.request))
-                    logger.debug('proposal request')
-                    request.txId = this.txID
-                    request.targets = [target]
-                    client.setUserContext(this.userContext, true);
-                    peers.addPeerRequestTime(target._name[0], target._name[1]);
-                    return Channel.sendTransactionProposal(request, this.channel.getName(), client, this.proposalOpt).then((results) => {
-                        logger.debug('proposal result' + results)
-                        this
-                            .responseTargets
-                            .push(target)
-                        this
-                            .responseResults
-                            .push(results[0][0])
-                        var proposalGood = sender.checkProposal(this.channel, results, true)
-                        if (proposalGood) {
-                            this
-                                .results[0]
-                                .push(results[0][0])
+        return sender.reorderTargets(targets).then((reTargets) => {
+            // logger.debug(reTargets)
+            return Promise.each(reTargets, (target) => {
+                let request = JSON.parse(JSON.stringify(this.request))
+                logger.debug('proposal request')
+                request.txId = this.txID
+                request.targets = [target]
+                client.setUserContext(this.userContext, true);
+                peers.addPeerRequestTime(target._name[0], target._name[1]);
+                return Channel.sendTransactionProposal(request, this.channel.getName(), client, this.proposalOpt).then((results) => {
+                    logger.debug('proposal result' + results)
+                    this.responseTargets.push(target)
+                    this.responseResults.push(results[0][0])
+                    var proposalGood = sender.checkProposal(this.channel, results, true)
+                    if (proposalGood) {
+                        this.results[0].push(results[0][0])
+                        return Promise.reject('Done')
+                    } else {
+                        if (results[0][0].toString().indexOf('chaincode error') > -1 &&
+                            results[0][0].toString().indexOf('exist') == -1) {
                             return Promise.reject('Done')
-                        } else {
-                            if (results[0][0].toString().indexOf('chaincode error') > -1 && results[0][0].toString().indexOf('exist') == -1) {
-                                return Promise.reject('Done')
-                            }
-                            return Promise.resolve()
                         }
-                    })
+                        return Promise.resolve()
+                    }
                 })
             })
-            .then(() => {
-                return Promise.reject('All failed')
-            })
-            .catch((e) => {
-                logger.debug('iterative end')
-                if (e == 'Done') {
-                    return Promise.resolve('Done')
-                } else {
-                    logger.warn(e)
-                    return Promise.reject(e)
-                }
-            })
+        }).then(() => {
+            return Promise.reject('All failed')
+        }).catch((e) => {
+            logger.debug('iterative end')
+            if (e == 'Done') {
+                return Promise.resolve('Done')
+            } else {
+                logger.warn(e)
+                return Promise.reject(e)
+            }
+        })
     }
     makeProposalResponse() {
         return sender.makeProposalResponse(this.responseTargets, this.responseResults, 'invoke')
@@ -317,8 +308,9 @@ var sender = class {
             logger.debug('get targets');
             logger.debug('send method is ' + this.sendType)
             if (this.sendType == 'instantiate') {
-                // TO DO: intantiate should send to all peers and so it worth to be disscuess how
-                // to do when the instantiate type
+                //TO DO: intantiate should send to all peers
+                //and so it worth to be disscuess how to do when the
+                //instantiate type
             } else if (this.sendType == 'upgrade') {
                 //TO DO: same as the instantiate
             } else if (this.sendType == 'invoke') {
@@ -372,7 +364,10 @@ var sender = class {
             logger.debug(`get request Time for ${target._name} : ${requestTime}`);
             if (reorderedTargets.length == 0) {
                 logger.debug('first compare, so just push into quene');
-                reorderedTargets.push({target, requestTime})
+                reorderedTargets.push({
+                    target,
+                    requestTime
+                })
             } else {
                 // want to re-arrange the target from times small to times large
                 let isInserted = false
@@ -390,7 +385,10 @@ var sender = class {
                     }
                 }
                 if (!isInserted) {
-                    reorderedTargets.push({target, requestTime})
+                    reorderedTargets.push({
+                        target,
+                        requestTime
+                    })
                 }
             }
         })
@@ -413,10 +411,7 @@ var sender = class {
                     response.response = proposalResuls[targetIndx].response
                     delete response.response.payload
                 } else if (type == 'invoke') {
-                    response.response = proposalResuls[targetIndx]
-                        .response
-                        .payload
-                        .toString()
+                    response.response = proposalResuls[targetIndx].response.payload.toString()
                 }
             } else {
                 response.response = proposalResuls[targetIndx].toString()
@@ -427,7 +422,11 @@ var sender = class {
 
         return proposalResponse
 
+
     }
 }
+
+
+
 
 module.exports = sender
