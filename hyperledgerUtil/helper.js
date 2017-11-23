@@ -181,7 +181,8 @@ var processBlockToReadAbleJson = function(response_payloads) {
                     if (txInput.input[3]) {
                         console.log('start to parse signPolicy')
                         let signaturePolicyEnvelope = _policiesProto.SignaturePolicyEnvelope.decode(new Buffer.from(txInput.input[3]))
-                        let policy = signaturePolicyEnvelope.policy
+                        logger.debug(signaturePolicyEnvelope)
+                        let policy = signaturePolicyEnvelope.rule
                         let n_out_of = policy.n_out_of
                         let identities = signaturePolicyEnvelope.identities
                         let c = 0;

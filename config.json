@@ -23,7 +23,7 @@
             "hostName": "localhost"
         },
         "monitor": {
-            "enabled": false,
+            "enabled": true,
             "interval": 3000
         }
     },
