@@ -23,11 +23,12 @@
             "hostName": "localhost"
         },
         "monitor": {
-            "enabled": true,
+            "enabled": false,
             "interval": 3000
         }
     },
     "fabric": {
+        "networkConfig":"network-config.json",
         "orgName": "org1",
         "mode": "prod",
         "keyValueStore": {

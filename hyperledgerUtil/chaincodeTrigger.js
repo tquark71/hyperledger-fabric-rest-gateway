@@ -78,8 +78,8 @@ function registarTxPromisesAny(ehs, txID, timeout) {
                 eh.unregisterTxEvent(txID);
 
                 if (code !== 'VALID') {
-                    logger.error('The chaincode  transaction was invalid, code = ' + code);
-                    reject('The chaincode  transaction was invalid, code = ' + code);
+                    logger.error('The transaction was invalid, code = ' + code);
+                    reject('The transaction was invalid, code = ' + code);
                 } else {
                     resolve();
                 }
@@ -367,20 +367,19 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
                 proposalResuls.push(response.response.payload.toString())
             }
         })
+        logger.debug('check proposal')
         compareResult = Sender.checkProposal(channel, results)
-        if (compareResult) {
+        logger.debug(`result is ${compareResult}`)
+
+        if (!compareResult) {
             let response = sender.makeProposalResponse()
             response.push({
                 compareResult: compareResult
             })
-            return Promise.reject(JSON.stringify(response))
+            return Promise.reject(response)
         } else {
             return sendToCommit(results, tx_id, channel, userContext, 'invoke').then(() => {
-                if (checkAllResult(proposalResuls)) {
-                    return proposalResuls[0]
-                } else {
-                    return "tx has commite but some peer's response not the same" + proposalResuls
-                }
+                return proposalResuls[0]
             })
         }
     })

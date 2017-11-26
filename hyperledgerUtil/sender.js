@@ -151,38 +151,46 @@ var sender = class {
         }
         return args
     }
-    executePolicy(policy) {
-        if (policy.Type == 'n_out_of') {
+    executePolicy(rule) {
+        if (rule.Type == 'n_out_of') {
             logger.debug('start n out of ')
-            return this.executeNOutOf(policy)
-        } else if (policy.Type == 'signed_by') {
+            return this.executeNOutOf(rule)
+        } else if (rule.Type == 'signed_by') {
             logger.debug('start signed by ')
 
-            return this.executeSignBy(policy)
+            return this.executeSignBy(rule)
         }
     }
     initExecute() {
-        // logger.debug('init policy is :' + JSON.stringify(this.initPolicy))
-        return this.executeNOutOf(this.initPolicy.policy).catch((e) => {
+        logger.debug("<==== initExecute start ======>")
+        logger.debug(this.initPolicy.rule)
+        return this.executeNOutOf(this.initPolicy.rule).then((res) => {
+            logger.debug('sender init policy fullfiled')
+            logger.debug(res)
+            return res
+        }).catch((e) => {
+            logger.error('Finally, can not fullfill policy')
             return Promise.reject('try all method but can not fullfill the policy of chaincode')
         })
     }
-    executeNOutOf(policy) {
-        // logger.debug('execute N out of policy : %s', JSON.stringify(policy))
-        let n = policy['n_out_of'].n
+    executeNOutOf(rule) {
+        logger.debug("<=== executeNOutOf start===>")
+        logger.debug('rule')
+        logger.debug(rule)
+        let n = rule['n_out_of'].n
         logger.debug('execute N out of n : %s', n)
         let progressInfo = {
             number: n,
-            policiesIndex: 0
+            rulesIndex: 0
         }
-        let policies = policy['n_out_of'].policies
+        let rules = rule['n_out_of'].rules
 
         // open mutiplu endorseThread depend on how many n need to be achieved
         var threadPromiseArr = []
         if (this.executeType == 'step') {
             for (let i = 0; i < n; i++) {
                 logger.debug('open a promise thread')
-                threadPromiseArr.push(this.endorseThread(progressInfo, policies))
+                threadPromiseArr.push(this.endorseThread(progressInfo, rules))
             }
             return Promise.all(threadPromiseArr).then((results) => {
                 logger.debug('all thread done, check results')
@@ -222,13 +230,13 @@ var sender = class {
         // }
 
     }
-    executeSignBy(policy) {
-        let identityIndex = policy['signed_by']
+    executeSignBy(rule) {
+        let identityIndex = rule['signed_by']
         let mspID = this.identities[identityIndex].principal['msp_identifier'];
         let role = this.identities[identityIndex].principal['role'];
         return this.sendProposalToOrg(mspID, role)
     }
-    endorseThread(progressInfo, policies) {
+    endorseThread(progressInfo, rules) {
         logger.debug('start to endorseThread')
         // now impelment method is open n time thread to reach the n
         // we can add speed up mode that send all request at same time to
@@ -236,17 +244,17 @@ var sender = class {
         if (progressInfo.number == 0) {
             return Promise.resolve('Done')
         } else {
-            let policiesIndex = progressInfo.policiesIndex;
-            if (policiesIndex == policies.length) {
+            let rulesIndex = progressInfo.rulesIndex;
+            if (rulesIndex == rules.length) {
                 logger.warn('all police has been try but can not reach the critiria');
                 return Promise.resolve('all police has been try but can not reach the critiria')
             } else {
-                progressInfo.policiesIndex++;
-                return this.executePolicy(policies[policiesIndex]).then((res) => {
+                progressInfo.rulesIndex++;
+                return this.executePolicy(rules[rulesIndex]).then((res) => {
                     progressInfo.number--;
-                    return this.endorseThread(progressInfo, policies)
+                    return this.endorseThread(progressInfo, rules)
                 }).catch((e) => {
-                    return this.endorseThread(progressInfo, policies)
+                    return this.endorseThread(progressInfo, rules)
                 })
             }
         }
@@ -272,7 +280,7 @@ var sender = class {
                         this.results[0].push(results[0][0])
                         return Promise.reject('Done')
                     } else {
-                        if (results[0][0].toString().indexOf('chaincode error') > -1 &&
+                        if (results[0][0].toString().indexOf('chaincode error') > -1 ||
                             results[0][0].toString().indexOf('exist') == -1) {
                             return Promise.reject('Done')
                         }
@@ -343,9 +351,15 @@ var sender = class {
         if (all_good) {
             if (channel != null || onePass) {
                 logger.debug(proposalResponses)
-                if (!channel.compareProposalResponseResults(proposalResponses)) {
-                    return false;
+                try {
+                    if (!channel.compareProposalResponseResults(proposalResponses)) {
+                        return false;
+                    }
+                } catch (e) {
+                    logger.warn(e)
+                    return false
                 }
+
             }
             return all_good
 

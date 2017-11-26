@@ -11,8 +11,7 @@
     "node": ">=6"
   },
   "author": "Norman Kung",
-  "scripts": {
-  },
+  "scripts": {},
   "dependencies": {
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
@@ -39,5 +38,10 @@
     "swagger-tools": "^0.10.1",
     "tcp-ping": "^0.1.1",
     "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "tap-colorize": "^1.2.0",
+    "tape": "^4.8.0",
+    "tape-promise": "^2.0.1"
   }
 }

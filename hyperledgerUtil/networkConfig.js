@@ -1,12 +1,13 @@
 var fs = require('fs');
 var hfc = require('fabric-client');
 var path = require('path')
-var outerNetworkconfig=require('../network-config')
+var config = require('../config');
+var networkConfigPath = path.resolve(__dirname, '../', config.fabric['networkConfig']);
+var outerNetworkconfig = require(networkConfigPath)
 var networkConfig = outerNetworkconfig['network-config']
 var channelConfig = outerNetworkconfig['channelConfig'];
 const ordererAttributeList = ['url', 'server-hostname', 'tls_cacerts'];
 var gatewayEventHub = require('../gatewayEventHub');
-var config = require('../config');
 var myOrgName = config.fabric.orgName;
 var log4js = require('log4js');
 var logger = log4js.getLogger('hyUtil/networkConfig');
@@ -724,5 +725,5 @@ saveNetworkConfigToFs = () => {
         "network-config": networkConfig,
         channelConfig: channelConfig
     }
-    fs.writeFileSync(path.join(__dirname, '../network-config'), JSON.stringify(networkConfigAll, null, 2));
+    fs.writeFileSync(networkConfigPath, JSON.stringify(networkConfigAll, null, 2));
 }

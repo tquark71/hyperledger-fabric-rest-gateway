@@ -66,12 +66,21 @@ var getChaincodeData = (peerName, channelName, chaincodeName, userContext) => {
                 if (response.response) {
                     logger.debug('queryChaincodeData - response status :: %d', response.response.status);
                     var chaincodeData = _chaincodeDataProto.chaincodeData.decode(response.response.payload);
+                    logger.debug("chaincodeData")
+
+                    logger.debug(chaincodeData)
                     var signaturePolicyEnvelope = _policiesProto.SignaturePolicyEnvelope.decode(chaincodeData.policy)
-                    var policy = signaturePolicyEnvelope.policy;
+                    var rule = signaturePolicyEnvelope.rule;
+                    logger.debug("signaturePolicyEnvelope")
+                    logger.debug(signaturePolicyEnvelope)
+                    logger.debug("rule")
+                    logger.debug(rule)
                     var identities = signaturePolicyEnvelope.identities;
                     identities.forEach((identity, index) => {
                         identities[index].principal = _mspPrincipalProto.MSPRole.decode(identity.principal.toBuffer())
                     })
+                    logger.debug("signaturePolicyEnvelope")
+                    logger.debug(JSON.stringify(signaturePolicyEnvelope))
                     chaincodeData.policy = signaturePolicyEnvelope
                     logger.debug('queryChaincodeData result:' + chaincodeData);
                     return Promise.resolve(chaincodeData);
@@ -272,7 +281,7 @@ var createChannel = function(channelName, sourceType, source, userContext) {
             if (response && response.status === 'SUCCESS') {
                 logger.debug('Successfully created the channel.');
 
-                return 'Channel \'' + channelName + '\' created Successfully';
+                return `Channel ${channelName} created Successfully`;
             } else {
                 return Promise.reject('Failed to create the channel \'' + channelName + '\' \n\n')
             }
@@ -335,15 +344,27 @@ var joinChannel = function(channelName, userContext, peerName) {
                 eventPromises.push(txPromise);
             });
             client._userContext = userContext;
-            let sendPromise = channel.joinChannel(request);
+            let sendPromise = channel.joinChannel(request).then((res) => {
+                let errMsg = []
+                if (Array.isArray(res)) {
+                    res.forEach((result) => {
+                        if (result instanceof Error) {
+                            errMsg.push(result.toString())
+                        }
+                    })
+                }
+                if (errMsg.length > 0) {
+                    return Promise.reject(errMsg)
+                }
+            })
             return Promise.all([sendPromise].concat(eventPromises))
         }).then((results) => {
         logger.debug(util.format('Join Channel R E S P O N S E : %j', results));
         if (results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
-            logger.info(util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName));
+            logger.info(util.format('Successfully joined peers in organization %s to the channel %s', myOrgName, channelName));
             eventHub.closeEhs(eventhubs)
 
-            return util.format('Successfully joined peers in organization %s to the channel \'%s\'', myOrgName, channelName);
+            return util.format('Successfully joined peers in organization %s to the channel %s', myOrgName, channelName);
         } else {
             logger.error(' Failed to join channel');
             eventHub.closeEhs(eventhubs)

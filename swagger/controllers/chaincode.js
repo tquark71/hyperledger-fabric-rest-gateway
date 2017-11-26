@@ -67,7 +67,7 @@ module.exports.chaincodeInstantiate = function(req, res, next) {
             .then((result) => {
 
                 var userObj = hyUtil.user.getUser(user.enrollID)
-                return hyUtil.channels[channelName].initialize()
+                return 'ok'
             }).then((result) => {
             var userObj = hyUtil.user.getUser(user.enrollID)
             return hyUtil.chaincodeTrigger.instantiateChaincode(channelName, chaincodeName, chaincodeVersion, functionName, args, userObj, opt)

@@ -182,14 +182,12 @@ var processBlockToReadAbleJson = function(response_payloads) {
                         console.log('start to parse signPolicy')
                         let signaturePolicyEnvelope = _policiesProto.SignaturePolicyEnvelope.decode(new Buffer.from(txInput.input[3]))
                         logger.debug(signaturePolicyEnvelope)
-                        let policy = signaturePolicyEnvelope.rule
-                        let n_out_of = policy.n_out_of
+                        let rule = signaturePolicyEnvelope.rule
+                        let n_out_of = rule.n_out_of
                         let identities = signaturePolicyEnvelope.identities
                         let c = 0;
                         identities.forEach((identity, index) => {
-
                             identities[index].principal = _mspPrincipalProto.MSPRole.decode(identity.principal.toBuffer())
-
                         })
                         txInput.input[3] = signaturePolicyEnvelope
                     }

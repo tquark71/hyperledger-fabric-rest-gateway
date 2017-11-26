@@ -98,6 +98,7 @@ module.exports.getChannelTargetByPeerType = (channelName, orgName, type, role) =
     logger.debug('get channel %s of org %s by type %s', channelName, orgName, type)
     if (!channelConfig[channelName]) {
         logger.warn(util.format('channel : %s did not exist in channel config', channelName))
+        throw Error(util.format('channel : %s did not exist in channel config', channelName))
     }
     if (orgName != 'all' && !channelConfig[channelName].peers[orgName]) {
         logger.warn(util.format('org: %s did not participate in channel : %s', orgName, channelName))
@@ -318,14 +319,19 @@ setInterval(() => {
 
 module.exports.getTargetsByOpt = (opt) => {
     logger.debug('<==== getTargetsByOpt start ====>');
-
+    console.log(opt)
     var peers = []
-    for (var org in opt) {
-        logger.debug(`org ${org}`)
-        for (let peerName of opt[org]) {
-            logger.debug(`get peer ${peerName} of ${org}`)
-            peers.push(getPeerByName(peerName, org))
+    for (var orgOpt of opt) {
+        for (var orgName in orgOpt) {
+            logger.debug(`org ${orgName}`)
+            logger.debug('peer list')
+            logger.debug(orgOpt[orgName])
+            for (let peerName of orgOpt[orgName]) {
+                logger.debug(`get peer ${peerName} of ${orgName}`)
+                peers.push(getPeerByName(peerName, orgName))
+            }
         }
+
     }
     return peers
 }
