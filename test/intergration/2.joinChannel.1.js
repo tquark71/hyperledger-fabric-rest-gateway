@@ -4,6 +4,8 @@ var tape = require('tape');
 var _test = require('tape-promise').default;
 
 var test = _test(tape);
+var colorize = require('tap-colorize');
+test.createStream().pipe(colorize()).pipe(process.stdout);
 var requestTool = require('../requestTool.js')
 var testTool = require('../testTool')
 var delay = testTool.delay

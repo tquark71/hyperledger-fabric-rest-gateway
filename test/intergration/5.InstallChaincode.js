@@ -4,6 +4,8 @@ var tape = require('tape');
 var _test = require('tape-promise').default;
 
 var test = _test(tape);
+var colorize = require('tap-colorize');
+test.createStream().pipe(colorize()).pipe(process.stdout);
 var requestTool = require('../requestTool.js')
 var testTool = require('../testTool')
 var delay = testTool.delay
@@ -176,11 +178,11 @@ test('Install chaincode channel code testCC in org2 again ', (t) => {
         t.end()
     }).catch((e) => {
         t.equal(JSON.stringify(e), JSON.stringify([{
-            url: 'grpcs://localhost:7051',
+            url: 'grpcs://localhost:8051',
             response: 'Error: chaincode error (status: 500, message: Error installing chaincode code mycc:v1(chaincode /var/hyperledger/production/chaincodes/mycc.v1 exists))'
         },
             {
-                url: 'grpcs://localhost:7056',
+                url: 'grpcs://localhost:8056',
                 response: 'Error: chaincode error (status: 500, message: Error installing chaincode code mycc:v1(chaincode /var/hyperledger/production/chaincodes/mycc.v1 exists))'
             }]))
         t.end()

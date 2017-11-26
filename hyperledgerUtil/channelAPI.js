@@ -355,6 +355,8 @@ var joinChannel = function(channelName, userContext, peerName) {
                 }
                 if (errMsg.length > 0) {
                     return Promise.reject(errMsg)
+                } else {
+                    return res
                 }
             })
             return Promise.all([sendPromise].concat(eventPromises))
