@@ -1,3 +1,3 @@
 var requestPlugin = require('./hyperledgerUtil').requestPlugin
 
-// requestPlugin.setPlugin('invoke', requestPlugin.individualPluginList['addTime']) //
+requestPlugin.setPlugin('invoke', requestPlugin.individualPluginList['addTime']) //
