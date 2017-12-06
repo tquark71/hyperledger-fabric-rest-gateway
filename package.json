@@ -40,6 +40,9 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
+    "require-dir": "^0.3.0",
+    "gulp-tape": "0.0.9",
+    "gulp": "^3.9.1",
     "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
     "tape-promise": "^2.0.1"

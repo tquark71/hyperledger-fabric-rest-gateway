@@ -1,5 +1,4 @@
 var hfc = require('fabric-client');
-var Channel = require('fabric-client/lib/Channel');
 var client = require('./client')
 var config = require('../config')
 var fs = require('fs')

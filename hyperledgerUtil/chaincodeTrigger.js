@@ -432,15 +432,25 @@ var queryChaincode = function(channelName, chaincodeName, fcn, args, userContext
         client._userContext = userContext;
         return channel.queryByChaincode(request)
     }).then((response_payloads) => {
+        logger.warn(response_payloads)
+        let isError = false;
         if (response_payloads) {
             for (let i = 0; i < response_payloads.length; i++) {
+                if (response_payloads[i] instanceof Error) {
+                    isError = true;
+                }
                 queryResponses.push(response_payloads[i].toString('utf8'))
             }
             logger.debug('query result ' + queryResponses)
             if (checkAllResult(queryResponses)) {
+                if (isError) {
+                    let response = Sender.makeProposalResponse(targets, response_payloads, 'query')
+                    logger.warn(response)
+                    return Promise.reject(response)
+                }
                 return queryResponses[0]
             } else {
-                return "some peer's response not the same" + queryResponses
+                return Promise.reject("some peer's response not the same" + queryResponses)
             }
         } else {
             logger.error('response_payloads is null');

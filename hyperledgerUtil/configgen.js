@@ -37,8 +37,8 @@ var runConfigtxlator = () => {
     let configtxlatorPath = path.join(__dirname, '../gopath', 'src', 'configtxlator', 'configtxlator')
     let commend = configtxlatorPath + " start"
     var configtxlatorI = exec(commend, (err) => {
-        if (err) {
-            logger.warn(err)
+        if (err.toString().indexOf('No such file or directory')) {
+            logger.warn("Can not found configlator, make sure you use ./install.sh to build this gateway")
         }
     })
 }

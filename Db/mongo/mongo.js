@@ -1,15 +1,15 @@
 var mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
 var config = require('../../config');
 var myOrgName = config.fabric.orgName;
 var hfc = require('fabric-client');
 var networkConfig = require('../../hyperledgerUtil/networkConfig')
-var ORGS =networkConfig.getNetworkConfig();
+var ORGS = networkConfig.getNetworkConfig();
 var log4js = require('log4js');
 var logger = log4js.getLogger('mongo');
 var port = config.gateway.storage.mongo.port;
 var ip = config.gateway.storage.mongo.ip;
 var options = {
-    promiseLibrary: require('bluebird'),
     server: {
         auto_reconnect: true
     }
@@ -18,11 +18,11 @@ var basicSchema = require('./schemas/schema');
 var schema = require('./schemas/monitorSchema');
 var gatewaySchema = require('./schemas/gatewaySchema');
 var gatewayEventHub = require('../../gatewayEventHub');
-gatewayEventHub.on('n-add-peer',(peerName)=>{
+gatewayEventHub.on('n-add-peer', (peerName) => {
     connectAndLinkModelsForPeerDb(peerName);
 })
 var DBs = {}
-var connectAndLinkModelsForPeerDb =(peerName)=>{
+var connectAndLinkModelsForPeerDb = (peerName) => {
     var uPS = ""
     if (config.gateway.storage.mongo.username && config.gateway.storage.mongo.username != "" && config.gateway.storage.mongo.password && config.gateway.storage.mongo.password != "") {
         uPS = config.gateway.storage.mongo.username + ':'
@@ -54,10 +54,10 @@ for (let peer in ORGS[myOrgName]) {
 }
 function connectGatewayModel() {
     let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + 'gateway', options, () => {
-        logger.warn('gateway db connect')
+        logger.info('gateway db connect')
     })
     connect.on('reconnected', () => {
-        logger.warn("gateway db reconnected");
+        logger.info("gateway db reconnected");
     })
     DBs.gateway = {}
     for (let dbSchema in gatewaySchema) {

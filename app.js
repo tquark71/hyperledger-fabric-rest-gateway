@@ -1,5 +1,7 @@
-/* eslint consistent-return:0 */
 var config = require('./config')
+var path = require('path')
+var logPath = path.resolve(__dirname, config.gateway.logPath, config.fabric.orgName)
+process.env.HFC_LOGGING = `{"error":"${path.join(logPath,'error.log')}","info":"${path.join(logPath,'info.log')}","debug":"${path.join(logPath,'debug.log')}","warn":"${path.join(logPath,'warn.log')}"}`
 require('./envCofig')(config)
 var hyperledgerUtil = require('./hyperledgerUtil')
 var fs = require('fs')
@@ -9,8 +11,6 @@ var blockdecoder = require('fabric-client/lib/BlockDecoder');
 var passport = require('passport');
 require('./monitor/passportConfig/passportStragy')(passport);
 require('./custermize')
-var path = require('path')
-var logPath = path.join(config.gateway.logPath, config.fabric.orgName)
 fx.mkdirSync(logPath);
 var https = require('https');
 var bodyParser = require('body-parser');

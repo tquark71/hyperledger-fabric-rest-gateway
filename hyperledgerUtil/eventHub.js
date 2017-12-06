@@ -320,9 +320,10 @@ var reconnectHandler = () => {
                     peersEventHub[peerName].eh.connect()
                 }, 2000)
 
+            } else if (status) {
+                peersEventHub[peerName].eh._checkConnection(false, true);
             }
             peersEventHub[peerName].alive = status
-
         }
     }, 1000)
 

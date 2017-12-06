@@ -16,9 +16,6 @@ function replaceByEnv(configs, paramParentArray = []) {
             }
             envName += config.toUpperCase()
             if (env[envName]) {
-                console.log("Find env varible")
-                console.log(envName)
-                console.log(env[envName])
                 if (env[envName] == "true") {
                     configs[config] = true
                 } else if (env[envName] == "false") {
@@ -30,7 +27,5 @@ function replaceByEnv(configs, paramParentArray = []) {
             }
         }
     }
-
-    console.log(configs)
 }
 module.exports = replaceByEnv
