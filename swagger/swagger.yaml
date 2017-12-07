@@ -10,6 +10,820 @@ schemes:
 produces:
 - "application/json"
 paths:
+  /channel/list:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query all channel on a peer"
+      description: "Query a self organization's peer to get all channel this peer join."
+      operationId: "getChannels"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query channels request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+  /channel/info:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query channel's info"
+      description: "Get informations, like height, current hash... and so on, of a channel"
+      operationId: "getChainInfo"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query channel info request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user","channelName"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Query channel info success
+                example: '{"height":{"low":4,"high":0,"unsigned":true},"currentBlockHash":{"buffer":{"type":"Buffer","data":[8,4,18,....,166,52]},"offset":4,"markedOffset":-1,"limit":36,"littleEndian":true,"noAssert":false},"previousBlockHash":{"buffer":{"type":"Buffer","data":[8,4,18,....,52]},"offset":38,"markedOffset":-1,"limit":70,"littleEndian":true,"noAssert":false}}'
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Non-validating peer
+                {"sdkResult": "Error: can not get peer $peerName in org $orgName"},
+
+                // Invailed channel name
+                {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"}
+      x-swagger-router-controller: "channel"
+  /channel/addOrg:
+    post:
+      tags:
+      - "Channel"
+      summary: "Add an org to a channel"
+      description: "Send a resquest to add a org to a existed channel, gatewau will send request to hyperledger to get channel config
+      and use this config to add additional org.\n
+      There are to method to get new org's information to add to config file.\n First is file system, you need to pass the org's name, mspID to the request\n
+      Second, pass based46 encoded certification to gateway.
+      Both two method will leverage \"configlator\" to calculate confing updata protobuffer, so make sure your configlater url has been set well before you trigger
+      this api"
+      operationId: "addOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "add org request"
+        required: true
+        schema:
+          type: "object"
+          required: ["sourceType","user","channelName"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            sourceType:
+              enum: ["local","str"]
+              type: "string"
+              example: local
+            type:
+              type: "string"
+              enum: ["peer","orderer"]
+              example: peer
+            mspID:
+              type: "string"
+              example: Org3MSP
+            opt:
+              type: "object"
+              properties:
+                orgName:
+                  type: "string"
+                  example: org1.example.com
+                  description: "required if sourceType is 'fs',orgName which will be mapped to the folder in /artifacts/crypto-config"
+                hashFamily:
+                  type: "string"
+                hashFunction:
+                  type: "string"
+                cacertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+                tlscacertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+                admincertStr:
+                  description: "required if source type is 'str', a base64 encoded certification"
+                  type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+  /channel/create:
+    post:
+      tags:
+      - "Channel"
+      summary: "Create a channel"
+      description: "Create a new channel in the network, pass the genesis tx file name which suppose place under the path: /artifact/channel"
+      operationId: "createChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "create channels request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","sourceType","source","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            sourceType:
+              type: string
+              description: Method to get the genesis tx file ###
+              enum: ["local","buffer","signRequest"]
+            source:
+              example: mychannel.tx
+              description: "Filename of genesis tx file in the /artifacts/channel/, obtained from the configgen tool."
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Create channel successfully!
+                example: Channel $channelName created Successfully
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Enable using same channel name
+                {"sdkResult": "Error: BAD_REQUEST"},
+                
+                // Create channel with error channel name
+                {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"},
+                
+                // Create channel with none existed tx
+                {"sdkResult": "Error: ENOENT: no such file or directory, open '/fabric-v1.0-gateway/server/artifacts/channel/$source'"}
+      x-swagger-router-controller: "channel"
+  /channel/instantiated:
+    post:
+      tags:
+      - "Channel"
+      summary: "Query instantiated chaincode of the channel"
+      description: "Send a request to a peer to query instantiated chaincode of the specific channel"
+      operationId: "getInstantiatedChaincodes"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query instantiated chaincodes request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","peerName","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            peerName:
+              example: peer1
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+  /channel/join:
+    post:
+      tags:
+      - "Channel"
+      summary: "Join channel"
+      description: "Send a request to all peer of self organization to join the channel"
+      operationId: "joinChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "join channel request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            opt:
+              example: {"org1": ["peer1", "peer2"]} ###
+              description: "Manually join peers into channel." ###
+              type: object
+            channelName:
+              example: mychannel
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Join channel successfully!
+                example: Successfully joined peers in organization $orgName to the channel $channelName
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Repeatedly join same org peer in the channel
+                {"sdkResult": ["Error: chaincode error (status: 500, message: Cannot create ledger from genesis block, due to LedgerID already exists)","Error: chaincode error (status: 500, message: Cannot create ledger from genesis block, due to LedgerID already exists)"]}
+                
+                // Invailed Channel name
+                {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"}
+      x-swagger-router-controller: "channel"
+  /channel/config:
+    post:
+      tags:
+      - "Channel"
+      summary: "Join channel"
+      description: "Send a request to a orderer to get the channel's config buffer"
+      operationId: "getChannelConfig"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Get channel config request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            channelName:
+              example: mychannel
+              type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Query channel config
+                example: '{"type":"Buffer","data":[10,162,69.......,102]}'
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Query channel config with error name
+                {"sdkResult":" Can't find $channelName channel"}
+      x-swagger-router-controller: "channel"
+  /channel/update:
+    post:
+      tags:
+      - "Channel"
+      summary: "Update channel"
+      description: "Send a request to a orderer to update the channel's config"
+      operationId: "updateChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Update channel config request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","sourceType","user","source"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            source:
+              example: updateConfigEx.pb
+            sourceType:
+              type: "string"
+              enum: ["local","buffer","signRequest"]
+              example: local
+              description: "File's name, under the path /artifact/channel, of configUpdate proto buffer generated by configlator"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+  /channel/init:
+    post:
+      tags:
+      - "Channel"
+      summary: "Init channel"
+      description: "Send a request to init a channel obj(get msp config and so on)"
+      operationId: "initChannel"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Init channel request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName","user"]
+          properties:
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+
+  /chaincode/install:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "Install chaincode"
+      description: "Install chaincode on the channel at all endorse peers"
+      operationId: "chaincodeInstall"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["chaincodeName","channelName","chaincodePath","chaincodeVersion","sourceType",langType,"user"]
+          properties:
+            chaincodeName:
+              example: mycc
+              type: "string"
+            channelName:
+              type: "string"
+              example: mychannel
+              # required: true
+            chaincodePath:
+              type: "string"
+              example: chaincodes/testCC
+              # required: true
+            chaincodeVersion:
+              type: "string"
+              example: v1
+            sourceType:
+              enum: ["sourceCode", "package"]
+              type: "string"
+              example: sourceCode
+            langType:
+              enum: [golang,node,java]
+              type: string
+              example: golang
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Install chaincode successfully
+                example: Successfully Installed chaincode on organization $orgName
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Enable install chaincode again
+                {"sdkResult":[{"url":"grpc://localhost:7051","response": "Error: chaincode error (status: 500, message: Error installing chaincode code $chaincodeName:$chaincodeVersion(chaincode /var/hyperledger/production/$chaincodePath.$chaincodeVersion exists))"}]},
+                
+                // Install chaincode with unexist path (Error)
+                {"sdkResult": "Error: ENOENT: no such file or directory, lstat '/fabric-v1.0-gateway/server/gopath/src/$chaincodePath'"},
+                
+                // Install chaincode in unexist channel
+                {"sdkResult": "Error: channel : $channelName did not exist in channel config"}
+      x-swagger-router-controller: "chaincode"
+  /chaincode/data:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincode data"
+      description: "query chaincode data from sepcific peer"
+      operationId: "getChaincodeData"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "install request"
+        required: true
+        schema:
+          type: "object"
+          required: ["chaincodeName","channelName","peerName","user"]
+          properties:
+            chaincodeName:
+              example: mycc
+              type: "string"
+            peerName:
+              example: peer1
+              type: "string"
+            channelName:
+              type: "string"
+              example: mychannel
+            user:
+              $ref: "#/definitions/user"
+              # required: true
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "channel"
+  /chaincode/instantiate:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "instantiate chaincdoe"
+      description: "instantiate chaincode at all endorse peers of a channel, chaincode should be install chaincode on peer first"
+      operationId: "chaincodeInstantiate"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "channelName",
+        "chaincodeName",
+        "chaincodeVersion",
+        "functionName",
+        "args",
+        "user"
+    ]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            chaincodeVersion:
+              type: "string"
+              example: v1
+            functionName:
+              type: "string"
+              example: init
+            args:
+              type: "array"
+              example: ["a","100","b","200"]
+              items:
+                type: "string"
+            opt:
+              type: "object"
+              properties:
+                endorsement-policy:
+                  type: string
+                  $ref: "#/definitions/endorsement-policy"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            type: object
+            properties:
+              sdkResult:
+                type: string
+                description: Instantiate chaincode successfully
+                example: instantiate successful
+        500:
+          description: "Error response"
+          schema:
+            $ref: '#/definitions/MultiResponses'
+          examples:
+            application/json: |-
+                // Instantiate chaincode again
+                {"sdkResult":[{"url":"grpcs://localhost:7051","response":"Error: chaincode error (status: 500, message: chaincode exists mycc)"}]},
+                
+                // Org did not have such chaincode
+                {"sdkResult":[{"url":"grpcs://localhost:7051","response":"Error: chaincode error (status: 500, message: cannot get package for the chaincode to be instantiated ($chaincodeName:$chaincodeVersion)-open /var/hyperledger/production/chaincodes/$chaincodeName.$chaincodeVersion: no such file or directory)"}]},
+                
+                // Invailed channel name
+                {"sdkResult":"Error: invailed channel name, plz check your network config has the config of channel $channelName"},
+
+                // Instantiate chaincode with error args
+                {"sdkResult":"Error: Transaction returned with failure: Incorrect number of arguments. Expecting 4"}
+      x-swagger-router-controller: "chaincode"
+  /chaincode/upgrade:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "upgrade chaincdoe"
+      description: "upgrade chaincode at all endorse peer of a channel, chaincode should be install chaincode on peer first"
+      operationId: "chaincodeUpgrade"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "upgrade request"
+        required: true
+        schema:
+          type: "object"
+          required: [
+        "channelName",
+        "chaincodeName",
+        "chaincodeVersion",
+        "functionName",
+        "args",
+        "user"
+    ]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            chaincodeVersion:
+              type: "string"
+              example: v1
+            functionName:
+              type: "string"
+              example: init
+            args:
+              type: "string"
+              example: ["a","1000","b","200"]
+            user:
+              $ref: "#/definitions/user"
+            opt:
+              type: "object"
+              properties:
+                endorsement-policy:
+                  type: string
+                  $ref: "#/definitions/endorsement-policy"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/invoke:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "invoke chaincdoe"
+      description: "Send endorse request to all endorse peer on the channel at one time, then send the reponse to order if there any response is good, it may cause rejection of insufficiency endorsement"
+      operationId: "chaincodeInvoke"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["move","a","b","10"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/invokeE:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "invoke chaincdoe with endorsepolicy"
+      description: "Different with \"\/chaincode\/invoke\", this rest api will handle the endorse request based on endorse policy, to invoke this api, you should make sure your monitr module has been enabled"
+      operationId: "chaincodeInvokeE"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["move","a","b","10"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/query:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincode"
+      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
+      operationId: "chaincodeQuery"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "Instantiate request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: mycc
+            channelName:
+              type: "string"
+              example: mychannel
+            functionName:
+              type: "string"
+              example: invoke
+            args:
+              type: "array"
+              example: ["query","a"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+
+      x-swagger-router-controller: "chaincode"
+  /chaincode/queryHistory:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query chaincdoe"
+      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
+      operationId: "chaincodeQueryHistory"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query history request"
+        required: true
+        schema:
+          type: "object"
+          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
+          properties:
+            chaincodeName:
+              type: "string"
+              example: "mycc"
+            channelName:
+              type: "string"
+              example: "mychannel"
+            functionName:
+              type: "string"
+              example: "query"
+            args:
+              type: "array"
+              example: ["a"]
+              items:
+                type: "string"
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "chaincode"
+  /chaincode/installed:
+    post:
+      tags:
+      - "Chaincode"
+      summary: "query installed chaincdoe"
+      description: "get installed chaincode from a self organiztion's peer, peer's name and url was mapped on the network-config"
+      operationId: "getInstalledChaincodes"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "request"
+        in: "body"
+        description: "query history request"
+        required: true
+        schema:
+          type: "object"
+          required: ["peerName", "user"]
+          properties:
+            peerName:
+              type: "string"
+              example: peer1
+            user:
+              $ref: "#/definitions/user"
+      responses:
+        200:
+          description: "SDK response"
+          schema:
+            $ref: "#/definitions/sdkResoponse"
+      x-swagger-router-controller: "chaincode"
+
+
   /networkConfig/networkConfig/add/org:
     post:
       tags:
@@ -881,718 +1695,7 @@ paths:
               sdkResult:
                 $ref: "#/definitions/out-sign-request-array"
       x-swagger-router-controller: "signRequest"
-  /chaincode/install:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "Install chaincode"
-      description: "Install chaincode on the channel at all endorse peers"
-      operationId: "chaincodeInstall"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "install request"
-        required: true
-        schema:
-          type: "object"
-          required: ["chaincodeName","channelName","chaincodePath","chaincodeVersion","sourceType",langType,"user"]
-          properties:
-            chaincodeName:
-              example: mycc
-              type: "string"
-            channelName:
-              type: "string"
-              example: mychannel
-              # required: true
-            chaincodePath:
-              type: "string"
-              example: chaincodes/testCC
-              # required: true
-            chaincodeVersion:
-              type: "string"
-              example: v1
-            sourceType:
-              enum: ["sourceCode", "package"]
-              type: "string"
-              example: sourceCode
-            langType:
-              enum: [golang,node,java]
-              type: string
-              example: golang
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-  /chaincode/data:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "query chaincode data"
-      description: "query chaincode data from sepcific peer"
-      operationId: "getChaincodeData"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "install request"
-        required: true
-        schema:
-          type: "object"
-          required: ["chaincodeName","channelName","peerName","user"]
-          properties:
-            chaincodeName:
-              example: mycc
-              type: "string"
-            peerName:
-              example: peer1
-              type: "string"
-            channelName:
-              type: "string"
-              example: mychannel
-            user:
-              $ref: "#/definitions/user"
-              # required: true
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-  /chaincode/instantiate:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "instantiate chaincdoe"
-      description: "instantiate chaincode at all endorse peers of a channel, chaincode should be install chaincode on peer first"
-      operationId: "chaincodeInstantiate"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Instantiate request"
-        required: true
-        schema:
-          type: "object"
-          required: [
-        "channelName",
-        "chaincodeName",
-        "chaincodeVersion",
-        "functionName",
-        "args",
-        "user"
-    ]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: mycc
-            channelName:
-              type: "string"
-              example: mychannel
-            chaincodeVersion:
-              type: "string"
-              example: v1
-            functionName:
-              type: "string"
-              example: init
-            args:
-              type: "array"
-              example: ["a","100","b","200"]
-              items:
-                type: "string"
-            opt:
-              type: "object"
-              properties:
-                endorsement-policy:
-                  type: string
-                  $ref: "#/definitions/endorsement-policy"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-  /chaincode/upgrade:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "upgrade chaincdoe"
-      description: "upgrade chaincode at all endorse peer of a channel, chaincode should be install chaincode on peer first"
-      operationId: "chaincodeUpgrade"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "upgrade request"
-        required: true
-        schema:
-          type: "object"
-          required: [
-        "channelName",
-        "chaincodeName",
-        "chaincodeVersion",
-        "functionName",
-        "args",
-        "user"
-    ]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: mycc
-            channelName:
-              type: "string"
-              example: mychannel
-            chaincodeVersion:
-              type: "string"
-              example: v1
-            functionName:
-              type: "string"
-              example: init
-            args:
-              type: "string"
-              example: ["a","1000","b","200"]
-            user:
-              $ref: "#/definitions/user"
-            opt:
-              type: "object"
-              properties:
-                endorsement-policy:
-                  type: string
-                  $ref: "#/definitions/endorsement-policy"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-  /chaincode/invoke:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "invoke chaincdoe"
-      description: "Send endorse request to all endorse peer on the channel at one time, then send the reponse to order if there any response is good, it may cause rejection of insufficiency endorsement"
-      operationId: "chaincodeInvoke"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Instantiate request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: mycc
-            channelName:
-              type: "string"
-              example: mychannel
-            functionName:
-              type: "string"
-              example: invoke
-            args:
-              type: "array"
-              example: ["move","a","b","10"]
-              items:
-                type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-  /chaincode/invokeE:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "invoke chaincdoe with endorsepolicy"
-      description: "Different with \"\/chaincode\/invoke\", this rest api will handle the endorse request based on endorse policy, to invoke this api, you should make sure your monitr module has been enabled"
-      operationId: "chaincodeInvokeE"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Instantiate request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: mycc
-            channelName:
-              type: "string"
-              example: mychannel
-            functionName:
-              type: "string"
-              example: invoke
-            args:
-              type: "array"
-              example: ["move","a","b","10"]
-              items:
-                type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-  /chaincode/query:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "query chaincode"
-      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
-      operationId: "chaincodeQuery"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Instantiate request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: mycc
-            channelName:
-              type: "string"
-              example: mychannel
-            functionName:
-              type: "string"
-              example: invoke
-            args:
-              type: "array"
-              example: ["query","a"]
-              items:
-                type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-
-      x-swagger-router-controller: "chaincode"
-
-  /chaincode/queryHistory:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "query chaincdoe"
-      description: "Send qeury request to all peer of self organiztion, then compare each result, if any result is different from others, the gateway will send back a array contained all peer's responses, if not, gateway will just send a resonpse back"
-      operationId: "chaincodeQueryHistory"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "query history request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName", "chaincodeName", "functionName", "args", "user"]
-          properties:
-            chaincodeName:
-              type: "string"
-              example: "mycc"
-            channelName:
-              type: "string"
-              example: "mychannel"
-            functionName:
-              type: "string"
-              example: "query"
-            args:
-              type: "array"
-              example: ["a"]
-              items:
-                type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-
-  /chaincode/installed:
-    post:
-      tags:
-      - "Chaincode"
-      summary: "query installed chaincdoe"
-      description: "get installed chaincode from a self organiztion's peer, peer's name and url was mapped on the network-config"
-      operationId: "getInstalledChaincodes"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "query history request"
-        required: true
-        schema:
-          type: "object"
-          required: ["peerName", "user"]
-          properties:
-            peerName:
-              type: "string"
-              example: peer1
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "chaincode"
-
-  /channel/list:
-    post:
-      tags:
-      - "Channel"
-      summary: "Query all channel on a peer"
-      description: "Query a self organization's peer to get all channel this peer join."
-      operationId: "getChannels"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "query channels request"
-        required: true
-        schema:
-          type: "object"
-          required: ["peerName", "user"]
-          properties:
-            peerName:
-              type: "string"
-              example: peer1
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
-  /channel/info:
-    post:
-      tags:
-      - "Channel"
-      summary: "Query channel's info"
-      description: "Get informations, like height, current hash... and so on, of a channel"
-      operationId: "getChainInfo"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "query channel info request"
-        required: true
-        schema:
-          type: "object"
-          required: ["peerName", "user","channelName"]
-          properties:
-            peerName:
-              type: "string"
-              example: peer1
-            channelName:
-              type: "string"
-              example: mychannel
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
-  /channel/addOrg:
-    post:
-      tags:
-      - "Channel"
-      summary: "Add an org to a channel"
-      description: "Send a resquest to add a org to a existed channel, gatewau will send request to hyperledger to get channel config
-      and use this config to add additional org.\n
-      There are to method to get new org's information to add to config file.\n First is file system, you need to pass the org's name, mspID to the request\n
-      Second, pass based46 encoded certification to gateway.
-      Both two method will leverage \"configlator\" to calculate confing updata protobuffer, so make sure your configlater url has been set well before you trigger
-      this api"
-      operationId: "addOrg"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "add org request"
-        required: true
-        schema:
-          type: "object"
-          required: ["sourceType","user","channelName"]
-          properties:
-            channelName:
-              type: "string"
-              example: mychannel
-            sourceType:
-              enum: ["local","str"]
-              type: "string"
-              example: local
-            type:
-              type: "string"
-              enum: ["peer","orderer"]
-              example: peer
-            mspID:
-              type: "string"
-              example: Org3MSP
-            opt:
-              type: "object"
-              properties:
-                orgName:
-                  type: "string"
-                  example: org1.example.com
-                  description: "required if sourceType is 'fs',orgName which will be mapped to the folder in /artifacts/crypto-config"
-                hashFamily:
-                  type: "string"
-                hashFunction:
-                  type: "string"
-                cacertStr:
-                  description: "required if source type is 'str', a base64 encoded certification"
-                  type: "string"
-                tlscacertStr:
-                  description: "required if source type is 'str', a base64 encoded certification"
-                  type: "string"
-                admincertStr:
-                  description: "required if source type is 'str', a base64 encoded certification"
-                  type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-  /channel/create:
-    post:
-      tags:
-      - "Channel"
-      summary: "create a channel"
-      description: "Create a new channel in the network, pass the genesis tx file name which suppose place under the path: /artifact/channel"
-      operationId: "createChannel"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "create channels request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","sourceType","source","user"]
-          properties:
-            channelName:
-              example: mychannel
-              type: "string"
-            sourceType:
-              type: string
-              enum: ["local","buffer","signRequest"]
-            source:
-              example: mychannel.tx
-              description: "Filename of genesis tx file in the /artifacts/channel/, obtained from the configgen tool."
-              type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
-  /channel/instantiated:
-    post:
-      tags:
-      - "Channel"
-      summary: "Query instantiated chaincode of the channel"
-      description: "Send a request to a peer to query instantiated chaincode of the specific channel"
-      operationId: "getInstantiatedChaincodes"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "query instantiated chaincodes request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","peerName","user"]
-          properties:
-            channelName:
-              example: mychannel
-              type: "string"
-            peerName:
-              example: peer1
-              type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-  /channel/join:
-    post:
-      tags:
-      - "Channel"
-      summary: "Join channel"
-      description: "Send a request to all peer of self organization to join the channel"
-      operationId: "joinChannel"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "join channel request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","user"]
-          properties:
-            opt:
-              type: object
-            channelName:
-              example: mychannel
-              type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
-  /channel/config:
-    post:
-      tags:
-      - "Channel"
-      summary: "Join channel"
-      description: "Send a request to a orderer to get the channel's config buffer"
-      operationId: "getChannelConfig"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Get channel config request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","user"]
-          properties:
-            channelName:
-              example: mychannel
-              type: "string"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
-  /channel/update:
-    post:
-      tags:
-      - "Channel"
-      summary: "Update channel"
-      description: "Send a request to a orderer to update the channel's config"
-      operationId: "updateChannel"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Update channel config request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","sourceType","user","source"]
-          properties:
-            channelName:
-              type: "string"
-              example: mychannel
-            source:
-              example: updateConfigEx.pb
-            sourceType:
-              type: "string"
-              enum: ["local","buffer","signRequest"]
-              example: local
-              description: "File's name, under the path /artifact/channel, of configUpdate proto buffer generated by configlator"
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-  /channel/init:
-    post:
-      tags:
-      - "Channel"
-      summary: "Init channel"
-      description: "Send a request to init a channel obj(get msp config and so on)"
-      operationId: "initChannel"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "request"
-        in: "body"
-        description: "Init channel request"
-        required: true
-        schema:
-          type: "object"
-          required: ["channelName","user"]
-          properties:
-            channelName:
-              type: "string"
-              example: mychannel
-            user:
-              $ref: "#/definitions/user"
-      responses:
-        200:
-          description: "SDK response"
-          schema:
-            $ref: "#/definitions/sdkResoponse"
-      x-swagger-router-controller: "channel"
-
+  
   /block/action:
     post:
       tags:
@@ -2277,11 +2380,13 @@ paths:
           schema:
             $ref: "#/definitions/sdkResoponse"
       x-swagger-router-controller: "monitor"
+
 definitions:
   sdkResoponse:
     properties:
       sdkResult:
         type: "object"
+
   user:
     required: [enrollID,enrollSecret]
     properties:
@@ -2383,3 +2488,24 @@ definitions:
             signed-by: 0,
             signed-by: 1
             ]
+  
+  MultiResponses:
+    type: array
+    items:
+    - $ref: '#/definitions/MultiResponsesItem'
+  MultiResponsesItem:
+    type: object
+    properties:
+      sdkResult:
+        type: string
+        description: Error Code Description
+
+        # 200:
+        #   description: "SDK response"
+        #   schema:
+        #     type: object
+        #     properties:
+        #       sdkResult:
+        #         type: string
+        #         description: Create channel successfully!
+        #         example: Channel $channelName created Successfully

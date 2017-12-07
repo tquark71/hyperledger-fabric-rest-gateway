@@ -11,6 +11,6 @@ requireDir('./build/tasks', {
 	recurse: true
 });
 
-gulp.task('default', ['test'], function() {
+gulp.task('default', ['integration-test'], function() {
 	// This will only run if the lint task is successful...
 });

@@ -2,7 +2,7 @@ var config = require('./config')
 var path = require('path')
 var logPath = path.resolve(__dirname, config.gateway.logPath, config.fabric.orgName)
 process.env.HFC_LOGGING = `{"error":"${path.join(logPath,'error.log')}","info":"${path.join(logPath,'info.log')}","debug":"${path.join(logPath,'debug.log')}","warn":"${path.join(logPath,'warn.log')}"}`
-require('./envCofig')(config)
+require('env-replacement')(config)
 var hyperledgerUtil = require('./hyperledgerUtil')
 var fs = require('fs')
 var fx = require('mkdir-recursive')
