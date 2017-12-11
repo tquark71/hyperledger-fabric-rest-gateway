@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -30,56 +29,17 @@ type EventSender struct {
 
 // Init function
 func (t *EventSender) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	err := stub.PutState("noevents", []byte("0"))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
 	return shim.Success(nil)
 }
 
 // Invoke function
 func (t *EventSender) invoke(stub shim.ChaincodeStubInterface) pb.Response {
-	_, args := stub.GetFunctionAndParameters()
-	if len(args) != 2 {
-		return shim.Error("Incorrect number of arguments. Expecting 2")
-	}
-	b, err := stub.GetState("noevents")
-	if err != nil {
-		return shim.Error("Failed to get state")
-	}
-	noevts, _ := strconv.Atoi(string(b))
 
-	tosend := "Event " + string(b) + args[1]
-	eventName := "evtsender" + args[0]
-
-	err = stub.PutState("noevents", []byte(strconv.Itoa(noevts+1)))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	err = stub.SetEvent(eventName, []byte(tosend))
+	err := stub.SetEvent("test", []byte("testMsg"))
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	return shim.Success(nil)
-}
-
-// Clear State function
-func (t *EventSender) clear(stub shim.ChaincodeStubInterface) pb.Response {
-	err := stub.PutState("noevents", []byte("0"))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	return shim.Success(nil)
-}
-
-// Query function
-func (t *EventSender) query(stub shim.ChaincodeStubInterface) pb.Response {
-	b, err := stub.GetState("noevents")
-	if err != nil {
-		return shim.Error("Failed to get state")
-	}
-	return shim.Success(b)
 }
 
 func (t *EventSender) Invoke(stub shim.ChaincodeStubInterface) pb.Response {

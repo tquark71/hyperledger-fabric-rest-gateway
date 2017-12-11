@@ -35,25 +35,14 @@ var init = () => {
         logger.info(`hyperledger util initialize all channel start`);
         let promiseArr = [];
 
-        logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
-        logger.warn(`///////////////////////Don not feel nervous if you see any err message in the section /////////////////////////`)
-        logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
-        logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
 
         for (let channelName in channelConfig) {
             promiseArr.push(channelInitAndListenConfig(channelName))
         }
         logger.debug('channel event uuid list');
         logger.debug(channelInitEventUuid);
-        return Promise.all(promiseArr).then((res) => {
-            logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
-            logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
-        }).catch((err) => {
-            logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
-            logger.warn(`///////////////////////////////////////////////////////////////////////////////////////////////////////////////`)
 
-
-        })
+        return Promise.all(promiseArr)
 
     })
 }
@@ -83,6 +72,7 @@ var channelInitAndListenConfig = (channelName) => {
                 if (txObj.type == 'config' && txObj.channelName == channelName) {
                     let orgAdmin = user.getOrgAdmin();
                     client.setUserContext(orgAdmin, true);
+                    logger.debug('get config block, start to init channel')
                     channel.initialize();
                 }
             })
@@ -90,6 +80,8 @@ var channelInitAndListenConfig = (channelName) => {
         channelInitEventUuid[channelName] = uuid;
         return channel.initialize().then((res) => {
             logger.info(`initialize channel ${channelName} finish`);
+        }).catch((e) => {
+
         })
     }
     return Promise.resolve()

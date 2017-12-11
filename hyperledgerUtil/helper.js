@@ -258,30 +258,52 @@ var turnBase64PemToBuffer = (base64pem) => {
 function getOpt(orgName, peerName) {
     let opt = {}
 
-    if (orgName == 'orderOrg') {
-        try {
-            let data = turnBase64PemToBuffer(ORGS[peerName]['tls_cacerts']);
-            if (data) {
-                logger.debug('tls_cacert is base64 encoded pem');
-            } else {
-                logger.debug('tls_cacert is not base64 encoded pem, may a path');
-                data = fs.readFileSync(path.join(__dirname, ORGS[peerName]['tls_cacerts']));
-            }
-            opt = {
-                pem: Buffer
-                    .from(data)
-                    .toString(),
-                'ssl-target-name-override': ORGS[peerName]['server-hostname']
-            }
-            return opt
+    // if (orgName == 'orderOrg') {
+    //     try {
+    //         let data = turnBase64PemToBuffer(ORGS[peerName]['tls_cacerts']);
+    //         if (data) {
+    //             logger.debug('tls_cacert is base64 encoded pem');
+    //         } else {
+    //             logger.debug('tls_cacert is not base64 encoded pem, may a path');
+    //             data = fs.readFileSync(path.join(__dirname, ORGS[peerName]['tls_cacerts']));
+    //         }
+    //         opt = {
+    //             pem: Buffer
+    //                 .from(data)
+    //                 .toString(),
+    //             'ssl-target-name-override': ORGS[peerName]['server-hostname']
+    //         }
+    //         return opt
 
-        } catch (e) {
-            return null
+    //     } catch (e) {
+    //         return null
 
-        }
-    }
+    //     }
+    // }
     try {
         if (config.fabric.mode == "prod") {
+            if (orgName == 'orderOrg') {
+                try {
+                    let data = turnBase64PemToBuffer(ORGS[peerName]['tls_cacerts']);
+                    if (data) {
+                        logger.debug('tls_cacert is base64 encoded pem');
+                    } else {
+                        logger.debug('tls_cacert is not base64 encoded pem, may a path');
+                        data = fs.readFileSync(path.join(__dirname, ORGS[peerName]['tls_cacerts']));
+                    }
+                    opt = {
+                        pem: Buffer
+                            .from(data)
+                            .toString(),
+                        'ssl-target-name-override': ORGS[peerName]['server-hostname']
+                    }
+                    return opt
+
+                } catch (e) {
+                    return null
+
+                }
+            }
             let data = fs.readFileSync(path.join(__dirname, ORGS[orgName][peerName]['tls_cacerts']));
             opt = {
                 pem: Buffer

@@ -201,10 +201,10 @@ paths:
             application/json: |-
                 // Enable using same channel name
                 {"sdkResult": "Error: BAD_REQUEST"},
-                
+
                 // Create channel with error channel name
                 {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"},
-                
+
                 // Create channel with none existed tx
                 {"sdkResult": "Error: ENOENT: no such file or directory, open '/fabric-v1.0-gateway/server/artifacts/channel/$source'"}
       x-swagger-router-controller: "channel"
@@ -285,7 +285,7 @@ paths:
             application/json: |-
                 // Repeatedly join same org peer in the channel
                 {"sdkResult": ["Error: chaincode error (status: 500, message: Cannot create ledger from genesis block, due to LedgerID already exists)","Error: chaincode error (status: 500, message: Cannot create ledger from genesis block, due to LedgerID already exists)"]}
-                
+
                 // Invailed Channel name
                 {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"}
       x-swagger-router-controller: "channel"
@@ -457,10 +457,10 @@ paths:
             application/json: |-
                 // Enable install chaincode again
                 {"sdkResult":[{"url":"grpc://localhost:7051","response": "Error: chaincode error (status: 500, message: Error installing chaincode code $chaincodeName:$chaincodeVersion(chaincode /var/hyperledger/production/$chaincodePath.$chaincodeVersion exists))"}]},
-                
+
                 // Install chaincode with unexist path (Error)
                 {"sdkResult": "Error: ENOENT: no such file or directory, lstat '/fabric-v1.0-gateway/server/gopath/src/$chaincodePath'"},
-                
+
                 // Install chaincode in unexist channel
                 {"sdkResult": "Error: channel : $channelName did not exist in channel config"}
       x-swagger-router-controller: "chaincode"
@@ -568,10 +568,10 @@ paths:
             application/json: |-
                 // Instantiate chaincode again
                 {"sdkResult":[{"url":"grpcs://localhost:7051","response":"Error: chaincode error (status: 500, message: chaincode exists mycc)"}]},
-                
+
                 // Org did not have such chaincode
                 {"sdkResult":[{"url":"grpcs://localhost:7051","response":"Error: chaincode error (status: 500, message: cannot get package for the chaincode to be instantiated ($chaincodeName:$chaincodeVersion)-open /var/hyperledger/production/chaincodes/$chaincodeName.$chaincodeVersion: no such file or directory)"}]},
-                
+
                 // Invailed channel name
                 {"sdkResult":"Error: invailed channel name, plz check your network config has the config of channel $channelName"},
 
@@ -1695,7 +1695,7 @@ paths:
               sdkResult:
                 $ref: "#/definitions/out-sign-request-array"
       x-swagger-router-controller: "signRequest"
-  
+
   /block/action:
     post:
       tags:
@@ -1747,14 +1747,17 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["channelName","blockNum","user"]
+          required: ["channelName","blockNum","user","peerName"]
           properties:
             channelName:
               type: "string"
               example: mychannel
+            peerName:
+              type: "string"
+              example: peer1
             blockNum:
               type: "string"
-              example: 1
+              example: "1"
             user:
               $ref: "#/definitions/user"
       responses:
@@ -2488,7 +2491,7 @@ definitions:
             signed-by: 0,
             signed-by: 1
             ]
-  
+
   MultiResponses:
     type: array
     items:
