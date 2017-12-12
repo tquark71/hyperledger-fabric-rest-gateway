@@ -2,6 +2,8 @@
 
 A sample Node.js app wrapped API server used to recieve request and send to Fabric network. This gateway is desinged for organization unit.
 
+![](https://as937179131.gitbooks.io/hyperledger-fabric-gateway/content/assets/import.png)
+
 ### Prerequisites and setup:
 
 * [Docker](https://www.docker.com/products/overview) - v1.12 or higher
