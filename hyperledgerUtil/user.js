@@ -16,7 +16,6 @@ var getUserData = () => {
 var userData = getUserData()
 var networkConfig = require('./networkConfig');
 var ORGS = networkConfig.getNetworkConfig();
-;
 var Promise = require('bluebird')
 var myOrgName = config.fabric.orgName
 var mspid = ORGS[myOrgName].mspid
@@ -26,7 +25,7 @@ var logger = log4js.getLogger('util/user');
 var gatewayEventHube = require('../gatewayEventHub');
 var adminKeyWatcher;
 var adminCertWatcher;
-
+var cryptoConfigPath = config.gateway.cryptoConfigPath;
 gatewayEventHube.on('n-org-revise', (reviseInfo) => {
     if (reviseInfo.orgName == myOrgName && reviseInfo.attribute == 'admin') {
         //turn off the original folder watcher;
@@ -54,9 +53,15 @@ function readAllFiles(dir) {
     return certs;
 }
 var enrollOrgAdmin = function(forceRefresh) {
+    logger.debug('start to enroll org admin')
+    var keyPath
 
-    var keyPath = path.join(__dirname, ORGS[myOrgName].admin.key);
-    var certPath = path.join(__dirname, ORGS[myOrgName].admin.cert);
+    keyPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgName].admin.key);
+
+    logger.debug('load org amdin key from ' + keyPath)
+    var certPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgName].admin.cert);
+    logger.debug('load org amdin cert from ' + certPath)
+
     adminKeyWatcher = fs.watch(path.resolve(keyPath), () => {
         adminKeyWatcher.close();
         enrollOrgAdmin(true)

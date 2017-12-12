@@ -244,7 +244,7 @@ var checkPeerAlive = (peerName, orgName) => {
             url = url.replace(/grpc?\:\/\//, '').split(':')
         }
     } else if (peerName == 'ca') {
-        url = ORGS[orgName][peerName]
+        url = ORGS[orgName][peerName].url
         if (url.indexOf('https') > -1) {
             url = url.replace(/https?\:\/\//, '').split(':')
         } else {

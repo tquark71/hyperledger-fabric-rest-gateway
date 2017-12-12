@@ -25,6 +25,7 @@ var _abProto = grpc.load(__dirname + '/protos/orderer/ab.proto').orderer;
 var networkConfig = require('./networkConfig');
 var ORGS = networkConfig.getNetworkConfig();
 var channelConfig = networkConfig.getChannelConfig();
+var cryptoConfigFolder = config.gateway.cryptoConfigPath;
 var EndPoint = require('fabric-client/lib/Remote').Endpoint
 var checkSerializedIdentity = (channel, serializedIdentity) => {
     logger.debug('<=========  checkSerializedIdentity start ============>');
@@ -257,29 +258,6 @@ var turnBase64PemToBuffer = (base64pem) => {
 }
 function getOpt(orgName, peerName) {
     let opt = {}
-
-    // if (orgName == 'orderOrg') {
-    //     try {
-    //         let data = turnBase64PemToBuffer(ORGS[peerName]['tls_cacerts']);
-    //         if (data) {
-    //             logger.debug('tls_cacert is base64 encoded pem');
-    //         } else {
-    //             logger.debug('tls_cacert is not base64 encoded pem, may a path');
-    //             data = fs.readFileSync(path.join(__dirname, ORGS[peerName]['tls_cacerts']));
-    //         }
-    //         opt = {
-    //             pem: Buffer
-    //                 .from(data)
-    //                 .toString(),
-    //             'ssl-target-name-override': ORGS[peerName]['server-hostname']
-    //         }
-    //         return opt
-
-    //     } catch (e) {
-    //         return null
-
-    //     }
-    // }
     try {
         if (config.fabric.mode == "prod") {
             if (orgName == 'orderOrg') {
@@ -289,7 +267,9 @@ function getOpt(orgName, peerName) {
                         logger.debug('tls_cacert is base64 encoded pem');
                     } else {
                         logger.debug('tls_cacert is not base64 encoded pem, may a path');
-                        data = fs.readFileSync(path.join(__dirname, ORGS[peerName]['tls_cacerts']));
+                        dataPath = path.resolve(__dirname, '../', cryptoConfigFolder, ORGS[peerName]['tls_cacerts'])
+                        logger.debug(dataPath)
+                        data = fs.readFileSync(dataPath);
                     }
                     opt = {
                         pem: Buffer
@@ -304,7 +284,10 @@ function getOpt(orgName, peerName) {
 
                 }
             }
-            let data = fs.readFileSync(path.join(__dirname, ORGS[orgName][peerName]['tls_cacerts']));
+            dataPath = path.resolve(__dirname, '../', cryptoConfigFolder, ORGS[orgName][peerName]['tls_cacerts'])
+            logger.debug('tls-cert path')
+            logger.debug(dataPath)
+            let data = fs.readFileSync(dataPath);
             opt = {
                 pem: Buffer
                     .from(data)

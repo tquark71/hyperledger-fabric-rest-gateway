@@ -11,8 +11,20 @@ logger.setLevel(config.gateway.logLevel);
 
 var myOrgName = config.fabric.orgName
 var client = require('./client')
-var caUrl = ORGS[myOrgName].ca
-var tlsOptions = config.fabric.ca.tlsOptions
+var caUrl = ORGS[myOrgName].ca.url
+logger.debug('Get ca ssl opt');
+
+var tlsOptions = helper.getOpt(myOrgName, 'ca')
+if (tlsOptions && tlsOptions.pem) {
+    tlsOptions = {
+        trustedRoots: [tlsOptions.pem.toString()],
+        verify: true
+    }
+} else {
+    tlsOptions = null
+}
+logger.debug(tlsOptions);
+
 var gatewayEventHub = require('../gatewayEventHub');
 
 var caClient = new copService(helper.transferSSLConfig(caUrl), tlsOptions,
@@ -23,8 +35,17 @@ var caClient = new copService(helper.transferSSLConfig(caUrl), tlsOptions,
 
 gatewayEventHub.on('n-org-revise', (reviseInfo) => {
     let {orgName, attribute} = reviseInfo;
-    let newUrl = ORGS[myOrgName].ca
     if (attribute == 'ca' && orgName == myOrgName) {
+        let tlsOptions = helper.getOpt(myOrgName, 'ca')
+        if (tlsOptions && tlsOptions.pem) {
+            tlsOptions = {
+                trustedRoots: [tlsOptions.pem.toString()],
+                verify: true
+            }
+        } else {
+            tlsOptions = null
+        }
+        let newUrl = ORGS[myOrgName].ca.url
         logger.debug('receive n-org-revise to change ca url')
         let tempCopServie = new copService(helper.transferSSLConfig(newUrl), tlsOptions,
             /*defautl TLS opts*/

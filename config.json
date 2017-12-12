@@ -10,6 +10,8 @@
             "keyFile": "key.pem",
             "certFile": "cert.pem"
         },
+        "networkConfig":"network-config.json",
+        "cryptoConfigPath":"artifacts/crypto-config",
         "storage": {
             "type": "mongo",
             "mongo": {
@@ -28,7 +30,6 @@
         }
     },
     "fabric": {
-        "networkConfig":"network-config.json",
         "orgName": "org1",
         "mode": "prod",
         "keyValueStore": {
@@ -53,10 +54,6 @@
             "admin": {
                 "enrollmentID": "admin",
                 "enrollmentSecret": "adminpw"
-            },
-            "tlsOptions": {
-                "trustRoots": [],
-                "verify": false
             }
         }
     }
