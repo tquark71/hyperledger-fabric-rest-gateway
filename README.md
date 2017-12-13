@@ -2,7 +2,7 @@
 
 A sample Node.js app wrapped API server used to recieve request and send to Fabric network. This gateway is desinged for organization unit.
 
-![](https://as937179131.gitbooks.io/hyperledger-fabric-gateway/content/assets/import.png)
+![](https://as93717913.gitbooks.io/hyperledger-fabric-gateway/content/assets/import.png)
 
 ### Prerequisites and setup:
 
@@ -25,4 +25,4 @@ Use following CLI to install dependency .
 This script will install npm packages and the configtxlator tool.
 # Getting Start
 
-### Please refer my gitbook for futher infomation: [hyperledger fabric gateway](https://as937179131.gitbooks.io/hyperledger-fabric-gateway/content/)
+### Please refer my gitbook for futher infomation: [hyperledger fabric gateway](https://as93717913.gitbooks.io/hyperledger-fabric-gateway/content/)
