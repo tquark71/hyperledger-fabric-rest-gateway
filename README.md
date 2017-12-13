@@ -4,6 +4,7 @@ A sample Node.js app wrapped API server used to recieve request and send to Fabr
 
 ![](https://as93717913.gitbooks.io/hyperledger-fabric-gateway/content/assets/import.png)
 
+### [\[API spec link\]](https://hyperledger-fabric-gateway-api-doc.mybluemix.net/docs/)
 ### Prerequisites and setup:
 
 * [Docker](https://www.docker.com/products/overview) - v1.12 or higher
@@ -25,14 +26,9 @@ Use following CLI to install dependency .
 This script will install npm packages and the configtxlator tool.
 # Getting Start
 #
-API Docs
 
 ---
 
-#### We provide several API for users to interact with Hyperledger Fabric quickly.
 
-#### API list please refer to following API Spec online to see the more detail explanation of the API.
-
-### [\[API spec link\]](https://hyperledger-fabric-gateway-api-doc.mybluemix.net/docs/)
 
 ### Please refer my gitbook for futher infomation: [hyperledger fabric gateway](https://as93717913.gitbooks.io/hyperledger-fabric-gateway/content/)
