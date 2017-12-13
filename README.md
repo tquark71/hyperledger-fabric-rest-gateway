@@ -1,4 +1,4 @@
-# Hyperledger Fabric Gateway
+# Hyperledger Fabric Gateway REST
 
 A sample Node.js app wrapped API server used to recieve request and send to Fabric network. This gateway is desinged for organization unit.
 
