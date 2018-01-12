@@ -5,7 +5,7 @@ var fs = require("fs")
 var util = require('util')
 var path = require('path')
 var tcpp = require('tcp-ping');
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var log4js = require('log4js');
 var logger = log4js.getLogger('helper');
 logger.setLevel(config.gateway.logLevel);
@@ -73,52 +73,13 @@ var checkSerializedIdentity = (channel, serializedIdentity) => {
     }
 }
 
-//make a peer alive status Map and set init value false
-
-// for (let peer in ORGS[myOrgName]) {
-
-//     if (peer.indexOf('peer') > -1) {
-//         peerAliveState[myOrgName][peer] = false
-//     }
-//     if(peer.indexOf('ca')>-1){
-//         peerAliveState[myOrgName][peer] = false
-//     }
-// }
-//to check the status of appointed peer by ping them
 
 
 
-// var getOrgRequestTime = (orgName) => {
-//     if (!requestTime[orgName]) {
-//         requestTime[orgName] = {
-//             peers: {},
-//             times: 0
-//         }
-//     }
-//     return requestTime[orgName].times
-// }
-// var addOrgRequsetTime = (orgName) => {
-//     if (!requestTime[orgName]) {
-//         requestTime[orgName] = {
-//             peers: {},
-//             times: 0
-//         }
-//     }
-//     requestTime[orgName].times++
-
-// }
-
-
-
-
-
-
-
-
-var getOrgNameByMspID = (mspID) => {
-    for (let orgName in ORGS) {
-        if (ORGS[orgName].mspid == mspID) {
-            return orgName
+var getOrgIndexByMspID = (mspID) => {
+    for (let orgIndex in ORGS) {
+        if (ORGS[orgIndex].mspid == mspID) {
+            return orgIndex
         }
     }
     return null;
@@ -129,11 +90,6 @@ var transferSSLConfig = (url) => {
         url = url.replace(/https\:/g, 'http:')
         url = url.replace(/grpcs\:/g, 'grpc:')
     }
-    // else {
-    //     url = url.replace(/http\:/g, 'https:')
-    //     url = url.replace(/grpc\:/g, 'grpcs:')
-    // }
-
     return url
 
 }
@@ -256,11 +212,11 @@ var turnBase64PemToBuffer = (base64pem) => {
         }
     }
 }
-function getOpt(orgName, peerName) {
+function getOpt(orgIndex, peerName) {
     let opt = {}
     try {
         if (config.fabric.mode == "prod") {
-            if (orgName == 'orderOrg') {
+            if (orgIndex == 'orderOrg') {
                 try {
                     let data = turnBase64PemToBuffer(ORGS[peerName]['tls_cacerts']);
                     if (data) {
@@ -284,7 +240,7 @@ function getOpt(orgName, peerName) {
 
                 }
             }
-            dataPath = path.resolve(__dirname, '../', cryptoConfigFolder, ORGS[orgName][peerName]['tls_cacerts'])
+            dataPath = path.resolve(__dirname, '../', cryptoConfigFolder, ORGS[orgIndex][peerName]['tls_cacerts'])
             logger.debug('tls-cert path')
             logger.debug(dataPath)
             let data = fs.readFileSync(dataPath);
@@ -292,7 +248,7 @@ function getOpt(orgName, peerName) {
                 pem: Buffer
                     .from(data)
                     .toString(),
-                'ssl-target-name-override': ORGS[orgName][peerName]['server-hostname']
+                'ssl-target-name-override': ORGS[orgIndex][peerName]['server-hostname']
             }
         }
         return opt
@@ -322,7 +278,7 @@ module.exports = {
     deleteArrayElement: deleteArrayElement,
     getOpt: getOpt,
     transferSSLConfig: transferSSLConfig,
-    getOrgNameByMspID: getOrgNameByMspID,
+    getOrgIndexByMspID: getOrgIndexByMspID,
     processBlockToReadAbleJson: processBlockToReadAbleJson,
     cloneJSON: cloneJSON,
     checkSerializedIdentity: checkSerializedIdentity,

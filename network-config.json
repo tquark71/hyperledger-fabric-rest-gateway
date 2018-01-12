@@ -1,84 +1,88 @@
 {
-    "network-config": {
-        "orderer": {
-            "url": "grpcs://localhost:7050",
-            "server-hostname": "orderer.example.com",
-            "tls_cacerts": "ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
-        },
-        "org1": {
-            "gatewayAddress": "http://localhost:4001",
-            "name": "peerOrg1",
-            "mspid": "Org1MSP",
-            "ca": {
-                "url": "https://localhost:7054",
-                "tls_cacerts": ""
-            },
-            "peer1": {
-                "requests": "grpcs://localhost:7051",
-                "events": "grpcs://localhost:7053",
-                "server-hostname": "peer0.org1.example.com",
-                "tls_cacerts": "peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
-            },
-            "peer2": {
-                "requests": "grpcs://localhost:7056",
-                "events": "grpcs://localhost:7058",
-                "server-hostname": "peer1.org1.example.com",
-                "tls_cacerts": "peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt"
-            },
-            "admin": {
-                "key": "peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/",
-                "cert": "peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts"
-            }
-        },
-        "org2": {
-            "gatewayAddress": "http://localhost:4002",
-            "name": "peerOrg2",
-            "mspid": "Org2MSP",
-            "ca": {
-                "url": "https://localhost:8054",
-                "tls_cacerts": ""
-            },
-            "peer1": {
-                "requests": "grpcs://localhost:8051",
-                "events": "grpcs://localhost:8053",
-                "server-hostname": "peer0.org2.example.com",
-                "tls_cacerts": "peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
-            },
-            "peer2": {
-                "requests": "grpcs://localhost:8056",
-                "events": "grpcs://localhost:8058",
-                "server-hostname": "peer1.org2.example.com",
-                "tls_cacerts": "peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt"
-            },
-            "admin": {
-                "key": "peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/",
-                "cert": "peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts"
-            }
-        }
+  "network-config": {
+    "orderer1": {
+      "url": "grpcs://localhost:7050",
+      "server-hostname": "orderer.example.com",
+      "tls_cacerts": "ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt"
     },
-    "channelConfig": {
-        "mychannel": {
-            "orderers": [
-                "orderer"
-            ],
-            "peers": {
-                "org1": [{
-                    "name": "peer1",
-                    "type": "e"
-                }, {
-                    "name": "peer2",
-                    "type": "e"
-                }],
-                "org2": [{
-                    "name": "peer1",
-                    "type": "e"
-                }, {
-                    "name": "peer2",
-                    "type": "e"
-                }]
-
-            }
-        }
+    "org1": {
+      "gatewayAddress": "http://localhost:4001",
+      "name": "peerOrg1",
+      "mspid": "Org1MSP",
+      "ca": {
+        "url": "https://localhost:7054",
+        "tls_cacerts": ""
+      },
+      "peer1": {
+        "requests": "grpcs://localhost:7051",
+        "events": "grpcs://localhost:7053",
+        "server-hostname": "peer0.org1.example.com",
+        "tls_cacerts": "peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
+      },
+      "peer2": {
+        "requests": "grpcs://localhost:7056",
+        "events": "grpcs://localhost:7058",
+        "server-hostname": "peer1.org1.example.com",
+        "tls_cacerts": "peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt"
+      },
+      "admin": {
+        "key": "peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/",
+        "cert": "peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts"
+      }
+    },
+    "org2": {
+      "gatewayAddress": "http://localhost:4002",
+      "name": "peerOrg2",
+      "mspid": "Org2MSP",
+      "ca": {
+        "url": "https://localhost:8054",
+        "tls_cacerts": ""
+      },
+      "peer1": {
+        "requests": "grpcs://localhost:8051",
+        "events": "grpcs://localhost:8053",
+        "server-hostname": "peer0.org2.example.com",
+        "tls_cacerts": "peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
+      },
+      "peer2": {
+        "requests": "grpcs://localhost:8056",
+        "events": "grpcs://localhost:8058",
+        "server-hostname": "peer1.org2.example.com",
+        "tls_cacerts": "peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt"
+      },
+      "admin": {
+        "key": "peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/",
+        "cert": "peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts"
+      }
     }
-
+  },
+  "channelConfig": {
+    "mychannel": {
+      "orderers": [
+        "orderer1"
+      ],
+      "peers": {
+        "org1": [
+          {
+            "name": "peer1",
+            "type": "e"
+          },
+          {
+            "name": "peer2",
+            "type": "e"
+          }
+        ],
+        "org2": [
+          {
+            "name": "peer1",
+            "type": "e"
+          },
+          {
+            "name": "peer2",
+            "type": "e"
+          }
+        ]
+      }
+    }
+  }
 }

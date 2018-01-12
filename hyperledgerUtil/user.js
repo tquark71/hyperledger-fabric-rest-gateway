@@ -17,8 +17,8 @@ var userData = getUserData()
 var networkConfig = require('./networkConfig');
 var ORGS = networkConfig.getNetworkConfig();
 var Promise = require('bluebird')
-var myOrgName = config.fabric.orgName
-var mspid = ORGS[myOrgName].mspid
+var myOrgIndex = config.fabric.orgIndex
+var mspid = ORGS[myOrgIndex].mspid
 var fs = require('fs')
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/user');
@@ -27,7 +27,7 @@ var adminKeyWatcher;
 var adminCertWatcher;
 var cryptoConfigPath = config.gateway.cryptoConfigPath;
 gatewayEventHube.on('n-org-revise', (reviseInfo) => {
-    if (reviseInfo.orgName == myOrgName && reviseInfo.attribute == 'admin') {
+    if (reviseInfo.orgIndex == myOrgIndex && reviseInfo.attribute == 'admin') {
         //turn off the original folder watcher;
         adminKeyWatcher.close();
         adminCertWatcher.close();
@@ -56,10 +56,10 @@ var enrollOrgAdmin = function(forceRefresh) {
     logger.debug('start to enroll org admin')
     var keyPath
 
-    keyPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgName].admin.key);
+    keyPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgIndex].admin.key);
 
     logger.debug('load org amdin key from ' + keyPath)
-    var certPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgName].admin.cert);
+    var certPath = path.resolve(__dirname, '../', cryptoConfigPath, ORGS[myOrgIndex].admin.cert);
     logger.debug('load org amdin cert from ' + certPath)
 
     adminKeyWatcher = fs.watch(path.resolve(keyPath), () => {
@@ -79,7 +79,7 @@ var enrollOrgAdmin = function(forceRefresh) {
 
             return Promise.resolve(user)
         } else {
-            var admin = ORGS[myOrgName].admin;
+            var admin = ORGS[myOrgIndex].admin;
 
             var keyPEM = readAllFiles(keyPath)[0]
             var certPEM = readAllFiles(certPath)[0];
@@ -98,6 +98,53 @@ var enrollOrgAdmin = function(forceRefresh) {
         users[orgAdminEnrollID] = orgAdmin
         orgAdmin.isOrgAdmin = true;
 
+        return Promise.resolve(orgAdmin)
+    })
+
+};
+var enrollOrdererOrgAdmin = function(forceRefresh) {
+    logger.debug('<========start to enroll orderer admin=============>')
+    var keyPath
+
+    keyPath = path.resolve(__dirname, '../', cryptoConfigPath, './ordererOrganizations/example.com/users/Admin@example.com/msp/keystore');
+
+    logger.debug('load org amdin key from ' + keyPath)
+    var certPath = path.resolve(__dirname, '../', cryptoConfigPath, './ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts');
+    logger.debug('load org amdin cert from ' + certPath)
+
+    adminKeyWatcher = fs.watch(path.resolve(keyPath), () => {
+        adminKeyWatcher.close();
+        enrollOrdererOrgAdmin(true)
+    })
+    adminCertWatcher = fs.watch(path.resolve(certPath), () => {
+        adminCertWatcher.close();
+        enrollOrdererOrgAdmin(true)
+    })
+    return client.getUserContext('ordererOrgAdmin', true).then((user) => {
+        if (forceRefresh) {
+            user = null
+        }
+        if (user) {
+            logger.info('get orderer orgAdmin from presist')
+
+            return Promise.resolve(user)
+        } else {
+            var keyPEM = readAllFiles(keyPath)[0]
+            var certPEM = readAllFiles(certPath)[0];
+            logger.debug('start to load certs and key for orderer orgAdmin')
+            return client.createUser({
+                username: 'ordererOrgAdmin',
+                mspid: 'OrdererMSP',
+                cryptoContent: {
+                    privateKeyPEM: keyPEM,
+                    signedCertPEM: certPEM
+                }
+            })
+        }
+    }).then((orgAdmin) => {
+        logger.info('orderer orgAdmin enrolled success')
+        users['ordererOrgAdmin'] = orgAdmin
+        orgAdmin.isOrgAdmin = true;
         return Promise.resolve(orgAdmin)
     })
 
@@ -172,7 +219,7 @@ var registarUser = (username, enrollmentSecret) => {
                 return caClient.register({
                     enrollmentID: username,
                     enrollmentSecret: enrollmentSecret,
-                    affiliation: myOrgName + '.department1'
+                    affiliation: myOrgIndex + '.department1'
                 }, member);
             }).then((secret) => {
                 userData[username] = secret
@@ -211,7 +258,7 @@ var enrollUser = (enrollID, enrollmentSecret) => {
 
                     member = new User(enrollID);
                     member._enrollmentSecret = enrollmentSecret;
-                    return member.setEnrollment(message.key, message.certificate, ORGS[myOrgName].mspid);
+                    return member.setEnrollment(message.key, message.certificate, ORGS[myOrgIndex].mspid);
                 })
                 .then(() => {
                     client.setUserContext(member);
@@ -338,6 +385,8 @@ var userInit = () => {
 
     adminPromise = [enrollCaAdmin().then(() => {
         return enrollOrgAdmin()
+    }).then(() => {
+        return enrollOrdererOrgAdmin()
     })]
 
     return Promise.all(adminPromise).then(
@@ -385,6 +434,9 @@ var getOrgAdmin = () => {
 var getAdminUser = () => {
     return getUser(caAdminEnrollID)
 }
+var getOrdererAdmin = () => {
+    return getUser('ordererOrgAdmin')
+}
 
 var updateUserData = () => {
 
@@ -400,5 +452,6 @@ module.exports = {
     userInit: userInit,
     getUser: getUser,
     matchUserDb: matchUserDb,
-    getUserNameList: getUserNameList
+    getUserNameList: getUserNameList,
+    getOrdererAdmin: getOrdererAdmin
 }

@@ -84,7 +84,7 @@ services:
       - orderer.example.com
   couchdb1-0:
     container_name: couchdb1-0
-    image: hyperledger/fabric-couchdb
+    image: hyperledger/fabric-couchdb:x86_64-1.0.4
     # Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
     # for example map it to utilize Fauxton User Interface in dev environments.
     ports:
@@ -109,7 +109,7 @@ services:
       - orderer.example.com
   couchdb1-1:
     container_name: couchdb1-1
-    image: hyperledger/fabric-couchdb
+    image: hyperledger/fabric-couchdb:x86_64-1.0.4
     # Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
     # for example map it to utilize Fauxton User Interface in dev environments.
   peer0.org2.example.com:
@@ -132,7 +132,7 @@ services:
       - orderer.example.com
   couchdb2-0:
     container_name: couchdb2-0
-    image: hyperledger/fabric-couchdb
+    image: hyperledger/fabric-couchdb:x86_64-1.0.4
     # Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
     # for example map it to utilize Fauxton User Interface in dev environments.
   peer1.org2.example.com:
@@ -155,7 +155,7 @@ services:
       - orderer.example.com
   couchdb2-1:
     container_name: couchdb2-1
-    image: hyperledger/fabric-couchdb
+    image: hyperledger/fabric-couchdb:x86_64-1.0.4
     # Comment/Uncomment the port mapping if you want to hide/expose the CouchDB service,
     # for example map it to utilize Fauxton User Interface in dev environments.
 

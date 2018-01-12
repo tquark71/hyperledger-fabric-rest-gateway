@@ -13,7 +13,7 @@
   "author": "Norman Kung",
   "scripts": {},
   "dependencies": {
-    "env-replacement":"1.0.0",
+    "env-config-replace":"1.0.2",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
     "bytebuffer": "^5.0.1",

@@ -11,11 +11,10 @@ var _serviceProto = grpc.load(__dirname + '/protos/peer/peer.proto').protos;
 var ORGS = networkConfig.getNetworkConfig()
 var channelConfig = networkConfig.getChannelConfig()
 var helper = require('./helper')
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var ordererCahe = {}
 var gatewayEventHub = require('../gatewayEventHub');
-
-module.exports.getOrderByName = (ordererName) => {
+var getOrderByName = (ordererName) => {
     let orderer
     if (!ORGS[ordererName]) {
         throw new Error('can not find order in network-config');
@@ -30,6 +29,19 @@ module.exports.getOrderByName = (ordererName) => {
     }
     return orderer
 }
+module.exports.getOrderByName = getOrderByName
+module.exports.getOrdererRandomly = () => {
+    let ordererNameArray = []
+    for (let orderer in ORGS) {
+        if (orderer.indexOf('order') > -1) {
+            ordererNameArray.push(orderer);
+        }
+    }
+    let randomIndex = Math.floor(Math.random() * ordererNameArray.length);
+    let ordererName = ordererNameArray[randomIndex];
+    return getOrderByName(ordererName)
+}
+
 gatewayEventHub.on('n-orderer-revise', (ordereName, attribute) => {
     switch (attribute) {
         case 'url': {

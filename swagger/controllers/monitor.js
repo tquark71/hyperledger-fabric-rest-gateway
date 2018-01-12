@@ -12,7 +12,7 @@ var config = require('../../config')
 var UserDb = require('../../monitor/userDb.json')
 var jwt = require('jsonwebtoken');
 var jwtSecret = config.gateway.jwtSecret;
-var myOrgName = config.fabric.orgName;
+var myOrgIndex = config.fabric.orgIndex;
 var log4js = require('log4js')
 var logger = log4js.getLogger('swagger/monitor')
 module.exports.returnPeerInfo = (req, res, next) => {
@@ -85,8 +85,6 @@ module.exports.returnChannelInfo = (req, res, next) => {
 module.exports.returnBlockInfo = (req, res, next) => {
     var errMsg = "";
     var body = req.swagger.params;
-    console.log(body)
-
     var peerName = body.peerName.value;
     var channelName = body.channelName.value;
     var blockNumber = body.blockNumber.value;
@@ -183,7 +181,7 @@ module.exports.returnAliveState = (req, res, next) => {
 
 }
 module.exports.returnSelfNetworkConfig = (req, res, next) => {
-    var myNetworkConfig = hyUtil.helper.cloneJSON(networkConfigAll['network-config'][myOrgName])
+    var myNetworkConfig = hyUtil.helper.cloneJSON(networkConfigAll['network-config'][myOrgIndex])
     logger.debug(myNetworkConfig)
     for (let peerName in myNetworkConfig) {
         if (peerName.indexOf('peer') > -1) {

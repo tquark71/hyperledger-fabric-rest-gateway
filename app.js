@@ -1,6 +1,6 @@
 var config = require('./config')
 var path = require('path')
-var logPath = path.resolve(__dirname, config.gateway.logPath, config.fabric.orgName)
+var logPath = path.resolve(__dirname, config.gateway.logPath, config.fabric.orgIndex)
 process.env.HFC_LOGGING = `{"error":"${path.join(logPath,'error.log')}","info":"${path.join(logPath,'info.log')}","debug":"${path.join(logPath,'debug.log')}","warn":"${path.join(logPath,'warn.log')}"}`
 require('env-replacement')(config)
 var hyperledgerUtil = require('./hyperledgerUtil')
@@ -10,7 +10,7 @@ var session = require('express-session')
 var blockdecoder = require('fabric-client/lib/BlockDecoder');
 var passport = require('passport');
 require('./monitor/passportConfig/passportStragy')(passport);
-require('./custermize')
+require('./customize')
 fx.mkdirSync(logPath);
 var https = require('https');
 var bodyParser = require('body-parser');
@@ -39,7 +39,7 @@ log4js.configure({
         type: "dateFile",
         pattern: "yyyy-MM-dd.log",
         alwaysIncludePattern: true,
-        filename: path.join(logPath, config.fabric.orgName + "-getageway-")
+        filename: path.join(logPath, config.fabric.orgIndex + "-getageway-")
     }],
     replaceConsole: true
 });
@@ -66,7 +66,7 @@ swaggerTools.initializeMiddleware(swaggerDoc, function(middleware) {
     })
     app.use(cookieParser());
     app.use(session({
-        key: config.fabric.orgName + 'cookie',
+        key: config.fabric.orgIndex + 'cookie',
         secret: '123456789',
         cookie: {
             maxAge: 60 * 60 * 1000

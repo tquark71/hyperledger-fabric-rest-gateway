@@ -18,7 +18,7 @@ var eventHub = require('./eventHub')
 var helper = require('./helper')
 var peers = require('./peers');
 var requestPlugin = require('./requestPlugin');
-var myOrgName = config.fabric.orgName;
+var myOrgIndex = config.fabric.orgIndex;
 var singRequestManager = require('./signRequest/signRequestManager')
 var gatewayEventHub = require('../gatewayEventHub')
 //var client = require('./client')
@@ -54,7 +54,7 @@ var cancelListenConfig = (channelName) => {
 }
 
 var channelInitAndListenConfig = (channelName) => {
-    if (!channelConfig[channelName].peers[myOrgName]) {
+    if (!channelConfig[channelName].peers[myOrgIndex]) {
         return Promise.resolve()
     }
     let orgAdmin = user.getOrgAdmin();
@@ -62,7 +62,7 @@ var channelInitAndListenConfig = (channelName) => {
     let channel = channels.getChannel(channelName);
     let peerNameArr = [];
 
-    channelConfig[channelName].peers[myOrgName].forEach((peerObj) => {
+    channelConfig[channelName].peers[myOrgIndex].forEach((peerObj) => {
         peerNameArr.push(peerObj.name);
     })
     if (peerNameArr.length > 0) {

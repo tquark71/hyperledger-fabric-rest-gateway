@@ -1,0 +1,66 @@
+{
+    "channel_id": "",
+    "read_set": {
+        "groups": {
+            "Application": {
+                "groups": {
+
+                }
+            }
+        },
+        "values": {
+            "Consortium": {
+                "value": {
+                    "name": ""
+                }
+            }
+        }
+    },
+    "write_set": {
+        "groups": {
+            "Application": {
+                "groups": {
+                },
+                "mod_policy": "Admins",
+                "policies": {
+                    "Admins": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                            "type": 3,
+                            "value": {
+                                "rule": "MAJORITY",
+                                "sub_policy": "Admins"
+                            }
+                        }
+                    },
+                    "Readers": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                            "type": 3,
+                            "value": {
+                                "sub_policy": "Readers"
+                            }
+                        }
+                    },
+                    "Writers": {
+                        "mod_policy": "Admins",
+                        "policy": {
+                            "type": 3,
+                            "value": {
+                                "sub_policy": "Writers"
+                            }
+                        }
+                    }
+                },
+                "version": "1"
+            }
+        },
+        "values": {
+            "Consortium": {
+                "value": {
+                    "name": ""
+                }
+            }
+        }
+    }
+}

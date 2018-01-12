@@ -16,7 +16,7 @@ var grpc = require('grpc');
 var channelAPI = require('./channelAPI')
 var configtxlatorUrl = "http://127.0.0.1:7059/"
 var channelArtifactsPath = path.join(__dirname, "../artifacts/channel")
-var cryptoConfigPath = path.join(__dirname, "../artifacts/crypto-config")
+var cryptoConfigPath = path.resolve(__dirname, "..", config.gateway.cryptoConfigPath)
 var configtxlatorI
 class bufferStream extends Writable {
     constructor(options) {
@@ -34,10 +34,13 @@ class bufferStream extends Writable {
     }
 }
 var runConfigtxlator = () => {
+    logger.info('<=== runConfigtxlator s ====>')
     let configtxlatorPath = path.join(__dirname, '../gopath', 'src', 'configtxlator', 'configtxlator')
+    logger.debug('configtxlatorPath')
+    logger.debug(configtxlatorPath)
     let commend = configtxlatorPath + " start"
     var configtxlatorI = exec(commend, (err) => {
-        if (err.toString().indexOf('No such file or directory')) {
+        if (err.toString().indexOf('No such file or directory') > -1) {
             logger.warn("Can not found configlator, make sure you use ./install.sh to build this gateway")
         }
     })
@@ -49,6 +52,42 @@ process.on('beforExit', () => {
     } catch (e) {}
 })
 runConfigtxlator()
+var createNewChannelConfigUpdatePb = (channelName, consortiumName, joinMspIDArray, attributeArray) => {
+    // Get channel configUpdate template
+    logger.debug('<=== createNewChannelConfigUpdatePb start ====>')
+    var channelConfigUpdateExJson = JSON.parse(fs.readFileSync(path.join(channelArtifactsPath, 'channelConfigUpdateEx.json')))
+    logger.debug('channelConfigUpdateExJson')
+    logger.debug(channelConfigUpdateExJson)
+    // update channel_id
+    channelConfigUpdateExJson.channel_id = channelName;
+    // insert all MspID that will join in this channel in read set
+    let readSetApplicationGroups = channelConfigUpdateExJson.read_set.groups.Application.groups
+    for (let MspID of joinMspIDArray) {
+        readSetApplicationGroups[MspID] = {};
+    }
+    // update consurtium name
+    channelConfigUpdateExJson.read_set.values.Consortium.value.name = consortiumName;
+    logger.debug(channelConfigUpdateExJson)
+
+    // insert all MspID that will join in this channel in write set
+    let writeSet = channelConfigUpdateExJson.write_set
+    let writeSetApplicationGroups = writeSet.groups.Application.groups;
+    for (let MspID of joinMspIDArray) {
+        writeSetApplicationGroups[MspID] = {};
+    }
+    logger.debug(channelConfigUpdateExJson)
+
+    let values = writeSet.values;
+    logger.debug(`values`)
+    logger.debug(values)
+    // update values consortium name
+    values.Consortium.value.name = consortiumName;
+    return turnConfigUpdateJsonToPb(channelConfigUpdateExJson).then((res) => {
+        logger.debug('turnConfigUpdateJsonToPb finish')
+        logger.debug(res)
+        return res
+    })
+}
 
 var addOrgAndGetConfigUpdatePb = (channelName, userContext, mspID, type, provideMethod, opt) => {
     return getChannelConfigJsonBuffer(channelName, userContext).then((jsonBuffer) => {
@@ -96,6 +135,26 @@ var getConfigUpdatePbFromConfig = (oConfigJson, uConfigJson) => {
         throw new Error('cant not get transfer config JSON to config.pb ' + err)
     })
 
+}
+var turnConfigUpdateJsonToPb = (configUpdateJson, writePath) => {
+    return postToConfigtxlator("encode", "common.ConfigUpdate", new Buffer.from(JSON.stringify(configUpdateJson)), writePath)
+}
+var turnConfigUpdatePbToJson = (configUpdatePb) => {
+
+    logger.debug('<=== turnConfigUpdatePbToJson s ====>')
+    logger.debug('configUpdatePb')
+    logger.debug(configUpdatePb)
+    if (!configUpdatePb instanceof Buffer || !configUpdatePb) {
+        return Promise.reject('error configUpdatePb type, should be buffer');
+    }
+    return postToConfigtxlator("decode", "common.ConfigUpdate", configUpdatePb).then((res) => {
+        logger.debug('configupdate json')
+        logger.debug(res)
+        return res
+    }).catch((e) => {
+        logger.error(e)
+        return Promise.reject(e)
+    })
 }
 var turnConfigJsonToPb = (configJson, writePath) => {
 
@@ -210,16 +269,23 @@ var postToConfigtxlator = (type, msgType, fileSourcesPath, writePath) => {
         }
         let url = configtxlatorUrl + toolName + '/' + type + '/' + msgType
         if (type == 'decode') {
+            logger.debug('configlator type decode')
             var req = request.post(url, {
                 body: binaryData
             }, (err, httpResponse, body) => {
+
                 if (err) {
+                    logger.error(err)
                     rj(err)
+                } else {
+                    logger.debug(httpResponse)
+                    logger.debug(body)
+                    if (writePath) {
+                        fs.writeFileSync(writePath, body)
+                    }
+                    rs(body)
                 }
-                if (writePath) {
-                    fs.writeFileSync(writePath, body)
-                }
-                rs(body)
+
             })
         } else {
             var bs = new bufferStream({
@@ -246,5 +312,7 @@ module.exports = {
     getChannelConfigJsonBuffer: getChannelConfigJsonBuffer,
     extractConfigJson: extractConfigJson,
     makeNewMspConfig: makeNewMspConfig,
-    addOrgAndGetConfigUpdatePb: addOrgAndGetConfigUpdatePb
+    addOrgAndGetConfigUpdatePb: addOrgAndGetConfigUpdatePb,
+    createNewChannelConfigUpdatePb: createNewChannelConfigUpdatePb,
+    turnConfigUpdatePbToJson: turnConfigUpdatePbToJson
 }

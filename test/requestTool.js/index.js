@@ -7,10 +7,10 @@ var gatewayAddressMap = {
 
 
 }
-module.exports.sendToGateway = function(orgName, router, body) {
+module.exports.sendToGateway = function(orgIndex, router, body) {
     return new Promise((rs, rj) => {
         request.post({
-            url: gatewayAddressMap[orgName] + router,
+            url: gatewayAddressMap[orgIndex] + router,
             body: body,
             json: true
         }, (err, resp, body) => {

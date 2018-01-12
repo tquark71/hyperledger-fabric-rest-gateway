@@ -6,7 +6,7 @@ var path = require('path')
 var user = require('../user')
 var config = require('../../config');
 
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/innerSignRequest');
 var helper = require('../helper');

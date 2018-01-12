@@ -14,7 +14,7 @@ var peer = class {
     constructor(peerName, url, io) {
         this.orgAdmin = users.getOrgAdmin()
         this.peerName = peerName;
-        this.orgName = config.fabric.orgName;
+        this.orgIndex = config.fabric.orgIndex;
         this.peerAlive = true;
         this.peerInfo = {
             peerName: peerName,

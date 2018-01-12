@@ -12,14 +12,14 @@ var networkConfig = require('./networkConfig')
 var ORGS = networkConfig.getNetworkConfig()
 var channelConfig = networkConfig.getChannelConfig()
 var helper = require('./helper')
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var peerAliveState = {}
 var peerCach = {}
 var requestTime = {}
 var gatewayEventHub = require('../gatewayEventHub');
 
-var checkPeerNameExist = (peerName, orgName) => {
-    if (ORGS[orgName].hasOwnProperty(peerName)) {
+var checkPeerNameExist = (peerName, orgIndex) => {
+    if (ORGS[orgIndex].hasOwnProperty(peerName)) {
         return true
     } else {
         return false
@@ -27,24 +27,24 @@ var checkPeerNameExist = (peerName, orgName) => {
 }
 
 gatewayEventHub.on('n-peer-revise', (reviseInfo) => {
-    let {orgName, peerName, attribute} = reviseInfo;
+    let {orgIndex, peerName, attribute} = reviseInfo;
     switch (attribute) {
         case 'requests': {
-            let remoteObje = getPeerCach(peerName, orgName);
+            let remoteObje = getPeerCach(peerName, orgIndex);
             if (remoteObje) {
                 helper.renewRemote(remoteObje)
             }
             break;
         }
         case 'server-hostname': {
-            let remoteObje = getPeerCach(peerName, orgName);
+            let remoteObje = getPeerCach(peerName, orgIndex);
             if (remoteObje) {
                 helper.renewRemote(remoteObje)
             }
             break;
         }
         case 'tls_cacerts': {
-            let remoteObje = getPeerCach(peerName, orgName);
+            let remoteObje = getPeerCach(peerName, orgIndex);
             if (remoteObje) {
                 helper.renewRemote(remoteObje)
             }
@@ -56,62 +56,62 @@ gatewayEventHub.on('n-peer-revise', (reviseInfo) => {
     }
 })
 
-var setPeerCach = (peerName, orgName, peerObj) => {
-    if (!peerCach[orgName]) {
-        peerCach[orgName] = {}
+var setPeerCach = (peerName, orgIndex, peerObj) => {
+    if (!peerCach[orgIndex]) {
+        peerCach[orgIndex] = {}
     }
-    peerCach[orgName][peerName] = peerObj
+    peerCach[orgIndex][peerName] = peerObj
 }
-var getPeerCach = (peerName, orgName) => {
-    if (peerCach[orgName]) {
-        if (peerCach[orgName][peerName]) {
-            return peerCach[orgName][peerName]
+var getPeerCach = (peerName, orgIndex) => {
+    if (peerCach[orgIndex]) {
+        if (peerCach[orgIndex][peerName]) {
+            return peerCach[orgIndex][peerName]
         }
     }
     return null
 }
-function getPeerByName(peerName, orgName) {
-    orgName = orgName || myOrgName
-    if (checkPeerNameExist(peerName, orgName)) {
+function getPeerByName(peerName, orgIndex) {
+    orgIndex = orgIndex || myOrgIndex
+    if (checkPeerNameExist(peerName, orgIndex)) {
         var cach = false;
-        var peer = getPeerCach(peerName, orgName)
+        var peer = getPeerCach(peerName, orgIndex)
         if (peer) {
             return peer
         } else {
-            let opt = helper.getOpt(orgName, peerName)
-            peer = client.newPeer(helper.transferSSLConfig(ORGS[orgName][peerName].requests), opt);
-            peer._name = [orgName, peerName];
-            setPeerCach(peerName, orgName, peer)
+            let opt = helper.getOpt(orgIndex, peerName)
+            peer = client.newPeer(helper.transferSSLConfig(ORGS[orgIndex][peerName].requests), opt);
+            peer._name = [orgIndex, peerName];
+            setPeerCach(peerName, orgIndex, peer)
             return peer
 
         }
     }
 
-    throw new Error('can not get peer ' + peerName + ' in org ' + orgName)
+    throw new Error('can not get peer ' + peerName + ' in org ' + orgIndex)
 }
 module.exports.getPeerByName = getPeerByName
 
 // reture same type peer from a channel config of an org, if type wasn't assigned, default return endorsment peer,
 // support peer type [all,c,e] individual means all type commit type and endorse peer
 //To DO: can support load balance and endorsePolicy by opt
-module.exports.getChannelTargetByPeerType = (channelName, orgName, type, role) => {
-    logger.debug('get channel %s of org %s by type %s', channelName, orgName, type)
+module.exports.getChannelTargetByPeerType = (channelName, orgIndex, type, role) => {
+    logger.debug('get channel %s of org %s by type %s', channelName, orgIndex, type)
     if (!channelConfig[channelName]) {
         logger.warn(util.format('channel : %s did not exist in channel config', channelName))
         throw Error(util.format('channel : %s did not exist in channel config', channelName))
     }
-    if (orgName != 'all' && !channelConfig[channelName].peers[orgName]) {
-        logger.warn(util.format('org: %s did not participate in channel : %s', orgName, channelName))
+    if (orgIndex != 'all' && !channelConfig[channelName].peers[orgIndex]) {
+        logger.warn(util.format('org: %s did not participate in channel : %s', orgIndex, channelName))
     }
-    var getPeers = (channelName, orgName, type, role) => {
+    var getPeers = (channelName, orgIndex, type, role) => {
 
-        for (let peerIndex in channelConfig[channelName].peers[orgName]) {
-            let peerType = channelConfig[channelName].peers[orgName][peerIndex].type
-            let peerRole = channelConfig[channelName].peers[orgName][peerIndex].role
+        for (let peerIndex in channelConfig[channelName].peers[orgIndex]) {
+            let peerType = channelConfig[channelName].peers[orgIndex][peerIndex].type
+            let peerRole = channelConfig[channelName].peers[orgIndex][peerIndex].role
             if (type != "all") {
                 if (peerType == type) {
-                    peerName = channelConfig[channelName].peers[orgName][peerIndex].name
-                    let peer = getPeerByName(peerName, orgName)
+                    peerName = channelConfig[channelName].peers[orgIndex][peerIndex].name
+                    let peer = getPeerByName(peerName, orgIndex)
                     if (role && role != 'any') {
                         if (peerRole == role) {
                             peers.push(peer)
@@ -122,8 +122,8 @@ module.exports.getChannelTargetByPeerType = (channelName, orgName, type, role) =
 
                 }
             } else {
-                peerName = channelConfig[channelName].peers[orgName][peerIndex].name
-                let peer = getPeerByName(peerName, orgName)
+                peerName = channelConfig[channelName].peers[orgIndex][peerIndex].name
+                let peer = getPeerByName(peerName, orgIndex)
                 if (role && role != 'any') {
                     if (peerRole == role) {
                         peers.push(peer)
@@ -135,26 +135,26 @@ module.exports.getChannelTargetByPeerType = (channelName, orgName, type, role) =
 
         }
     }
-    orgName = orgName || myOrgName
+    orgIndex = orgIndex || myOrgIndex
     type = type || "e"
     role = role || 'any'
     var peers = []
-    if (orgName == 'all') {
+    if (orgIndex == 'all') {
         for (let org in channelConfig[channelName].peers) {
             getPeers(channelName, org, type, role)
         }
     } else {
-        getPeers(channelName, orgName, type, role)
+        getPeers(channelName, orgIndex, type, role)
     }
     logger.debug("get target : " + peers)
     return peers
 }
 
 
-module.exports.getPeerNameList = (orgName) => {
+module.exports.getPeerNameList = (orgIndex) => {
     var peerNameList = []
-    orgName = orgName || myOrgName;
-    for (let peer in ORGS[orgName]) {
+    orgIndex = orgIndex || myOrgIndex;
+    for (let peer in ORGS[orgIndex]) {
         if (peer.indexOf('peer') > -1) {
             peerNameList.push(peer)
         }
@@ -162,23 +162,23 @@ module.exports.getPeerNameList = (orgName) => {
     return peerNameList
 }
 
-module.exports.getOrgTargets = (channelName, orgName) => {
+module.exports.getOrgTargets = (channelName, orgIndex) => {
     var orgCheck = true
-    orgName = orgName || myOrgName
+    orgIndex = orgIndex || myOrgIndex
     if (channelName) {
         orgCheck = false
         channelConfig[channelName].orgs.forEach((org) => {
-            if (org == orgName) {
+            if (org == orgIndex) {
                 orgCheck = true
             }
         })
     }
     var targets = []
     if (orgCheck) {
-        for (let key in ORGS[orgName]) {
+        for (let key in ORGS[orgIndex]) {
             if (key.indexOf('peer') === 0) {
-                let opt = getOpt(orgName, key)
-                let peer = client.newPeer(helper.transferSSLConfig(ORGS[orgName][key].requests), opt);
+                let opt = getOpt(orgIndex, key)
+                let peer = client.newPeer(helper.transferSSLConfig(ORGS[orgIndex][key].requests), opt);
                 targets.push(peer);
             }
         }
@@ -199,14 +199,14 @@ module.exports.getPeerByIps = (ipArr) => {
     return peers
 }
 
-function getPeerByIp(ip, orgName) {
-    orgName = orgName || myOrgName
+function getPeerByIp(ip, orgIndex) {
+    orgIndex = orgIndex || myOrgIndex
     logger.debug('start to get %s peer', ip)
-    for (let peer in ORGS[orgName]) {
+    for (let peer in ORGS[orgIndex]) {
         if (peer.indexOf('peer') > -1) {
-            if (ORGS[orgName][peer].requests.indexOf(ip) > -1) {
-                let opt = getOpt(orgName, peer)
-                let peer = client.newPeer(helper.transferSSLConfig(ORGS[orgName][peerName].requests), opt);
+            if (ORGS[orgIndex][peer].requests.indexOf(ip) > -1) {
+                let opt = getOpt(orgIndex, peer)
+                let peer = client.newPeer(helper.transferSSLConfig(ORGS[orgIndex][peerName].requests), opt);
                 return peer
             }
         }
@@ -221,11 +221,11 @@ module.exports.getPeerByIp = getPeerByIp;
 
 
 //for other module to get newest peer state
-module.exports.getPeerAliveState = (peerName, orgName) => {
-    orgName = orgName || myOrgName
-    if (peerAliveState[myOrgName] && peerAliveState[myOrgName][peerName]) {
+module.exports.getPeerAliveState = (peerName, orgIndex) => {
+    orgIndex = orgIndex || myOrgIndex
+    if (peerAliveState[myOrgIndex] && peerAliveState[myOrgIndex][peerName]) {
 
-        return peerAliveState[myOrgName][peerName];
+        return peerAliveState[myOrgIndex][peerName];
     } else {
         return false
     }
@@ -233,8 +233,8 @@ module.exports.getPeerAliveState = (peerName, orgName) => {
 module.exports.getAllAliveState = () => {
     return peerAliveState
 }
-var checkPeerAlive = (peerName, orgName) => {
-    orgName = orgName || myOrgName
+var checkPeerAlive = (peerName, orgIndex) => {
+    orgIndex = orgIndex || myOrgIndex
     let url
     if (peerName.indexOf('order') > -1) {
         url = ORGS[peerName].url
@@ -244,7 +244,7 @@ var checkPeerAlive = (peerName, orgName) => {
             url = url.replace(/grpc?\:\/\//, '').split(':')
         }
     } else if (peerName == 'ca') {
-        url = ORGS[orgName][peerName].url
+        url = ORGS[orgIndex][peerName].url
         if (url.indexOf('https') > -1) {
             url = url.replace(/https?\:\/\//, '').split(':')
         } else {
@@ -252,7 +252,7 @@ var checkPeerAlive = (peerName, orgName) => {
         }
 
     } else {
-        url = ORGS[orgName][peerName].requests
+        url = ORGS[orgIndex][peerName].requests
         if (url.indexOf('grpcs') > -1) {
             url = url.replace(/grpcs?\:\/\//, '').split(':')
         } else {
@@ -273,31 +273,31 @@ var checkPeerAlive = (peerName, orgName) => {
 function checkAllAliveStatue() {
     let newPeerAliveState = {};
 
-    for (let orgName in ORGS) {
-        if (orgName.indexOf('order') > -1) {
+    for (let orgIndex in ORGS) {
+        if (orgIndex.indexOf('order') > -1) {
             if (!newPeerAliveState['orderer']) {
                 newPeerAliveState['orderer'] = {}
             }
-            newPeerAliveState['orderer'][orgName] = false;
+            newPeerAliveState['orderer'][orgIndex] = false;
         } else {
-            if (!newPeerAliveState[orgName]) {
-                newPeerAliveState[orgName] = {}
+            if (!newPeerAliveState[orgIndex]) {
+                newPeerAliveState[orgIndex] = {}
             }
-            for (let peerName in ORGS[orgName]) {
+            for (let peerName in ORGS[orgIndex]) {
                 if (peerName.indexOf('peer') > -1) {
-                    newPeerAliveState[orgName][peerName] = false
+                    newPeerAliveState[orgIndex][peerName] = false
                 }
                 if (peerName.indexOf('ca') > -1) {
-                    newPeerAliveState[orgName][peerName] = false
+                    newPeerAliveState[orgIndex][peerName] = false
                 }
             }
         }
     }
     let promiseArr = [];
-    for (let orgName in newPeerAliveState) {
-        for (let peerName in newPeerAliveState[orgName]) {
-            let p = checkPeerAlive(peerName, orgName).then((res) => {
-                newPeerAliveState[orgName][peerName] = res
+    for (let orgIndex in newPeerAliveState) {
+        for (let peerName in newPeerAliveState[orgIndex]) {
+            let p = checkPeerAlive(peerName, orgIndex).then((res) => {
+                newPeerAliveState[orgIndex][peerName] = res
                 return Promise.resolve();
             })
             promiseArr.push(p);
@@ -322,13 +322,13 @@ module.exports.getTargetsByOpt = (opt) => {
     console.log(opt)
     var peers = []
     for (var orgOpt of opt) {
-        for (var orgName in orgOpt) {
-            logger.debug(`org ${orgName}`)
+        for (var orgIndex in orgOpt) {
+            logger.debug(`org ${orgIndex}`)
             logger.debug('peer list')
-            logger.debug(orgOpt[orgName])
-            for (let peerName of orgOpt[orgName]) {
-                logger.debug(`get peer ${peerName} of ${orgName}`)
-                peers.push(getPeerByName(peerName, orgName))
+            logger.debug(orgOpt[orgIndex])
+            for (let peerName of orgOpt[orgIndex]) {
+                logger.debug(`get peer ${peerName} of ${orgIndex}`)
+                peers.push(getPeerByName(peerName, orgIndex))
             }
         }
 
@@ -336,38 +336,38 @@ module.exports.getTargetsByOpt = (opt) => {
     return peers
 }
 
-module.exports.addPeerRequestTime = (orgName, peerName) => {
-    if (!requestTime[orgName]) {
-        requestTime[orgName] = {
+module.exports.addPeerRequestTime = (orgIndex, peerName) => {
+    if (!requestTime[orgIndex]) {
+        requestTime[orgIndex] = {
             peers: {},
             times: 0
         }
-        requestTime[orgName].peers[peerName] = {
+        requestTime[orgIndex].peers[peerName] = {
             times: 0
         }
-    } else if (!requestTime[orgName][peerName]) {
-        requestTime[orgName].peers[peerName] = {
+    } else if (!requestTime[orgIndex][peerName]) {
+        requestTime[orgIndex].peers[peerName] = {
             times: 0
         }
     }
-    requestTime[orgName].times++;
-    requestTime[orgName].peers[peerName].times++
+    requestTime[orgIndex].times++;
+    requestTime[orgIndex].peers[peerName].times++
 }
-module.exports.getPeerRequsetTime = (orgName, peerName) => {
-    if (!requestTime[orgName]) {
-        requestTime[orgName] = {
+module.exports.getPeerRequsetTime = (orgIndex, peerName) => {
+    if (!requestTime[orgIndex]) {
+        requestTime[orgIndex] = {
             peers: {},
             times: 0
         }
-        requestTime[orgName].peers[peerName] = {
+        requestTime[orgIndex].peers[peerName] = {
             times: 0
         }
-    } else if (!requestTime[orgName][peerName]) {
-        requestTime[orgName].peers[peerName] = {
+    } else if (!requestTime[orgIndex][peerName]) {
+        requestTime[orgIndex].peers[peerName] = {
             times: 0
         }
     }
-    return requestTime[orgName].peers[peerName].times
+    return requestTime[orgIndex].peers[peerName].times
 }
 
 

@@ -1,1 +1,17 @@
-{"orgAdmin":"87654321","caAdmin":"87654321","testUser":"12345","norman":"12345","tony":"12345","new1":"12345","new2":"12345","newOneUserEnrollID":"newOneUserPassword","userID":"userpassword","userID2":"userpassword","peer2.org1.example.com":"12345","testUser3":"userpassword","testUser4":"userpassword","testUser5":"userpassword"}
+{
+    "orgAdmin": "87654321",
+    "ordererOrgAdmin":"87654321",
+    "caAdmin": "87654321",
+    "testUser": "12345",
+    "norman": "12345",
+    "tony": "12345",
+    "new1": "12345",
+    "new2": "12345",
+    "newOneUserEnrollID": "newOneUserPassword",
+    "userID": "userpassword",
+    "userID2": "userpassword",
+    "peer2.org1.example.com": "12345",
+    "testUser3": "userpassword",
+    "testUser4": "userpassword",
+    "testUser5": "userpassword"
+}

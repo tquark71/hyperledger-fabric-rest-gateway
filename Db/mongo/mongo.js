@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 var config = require('../../config');
-var myOrgName = config.fabric.orgName;
+var myOrgIndex = config.fabric.orgIndex;
 var hfc = require('fabric-client');
 var networkConfig = require('../../hyperledgerUtil/networkConfig')
 var ORGS = networkConfig.getNetworkConfig();
@@ -28,12 +28,12 @@ var connectAndLinkModelsForPeerDb = (peerName) => {
         uPS = config.gateway.storage.mongo.username + ':'
         config.gateway.storage.mongo.password + '@'
     }
-    logger.info('connect db at ' + 'mongodb://' + uPS + ip + ':' + port + '/' + myOrgName + '-' + peerName)
-    let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + peerName, options, () => {
+    logger.info('connect db at ' + 'mongodb://' + uPS + ip + ':' + port + '/' + myOrgIndex + '-' + peerName)
+    let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgIndex + '-' + peerName, options, () => {
         logger.info('peer db connect')
     })
     connect.on('reconnected', () => {
-        logger.info(myOrgName + " " + peerName + " reconnected");
+        logger.info(myOrgIndex + " " + peerName + " reconnected");
     })
     DBs[peerName] = {
     }
@@ -47,13 +47,13 @@ var connectAndLinkModelsForPeerDb = (peerName) => {
         DBs[peerName][dbName] = connect.model(dbName, schema[dbSchema])
     }
 }
-for (let peer in ORGS[myOrgName]) {
+for (let peer in ORGS[myOrgIndex]) {
     if (peer.indexOf('peer') > -1) {
         connectAndLinkModelsForPeerDb(peer)
     }
 }
 function connectGatewayModel() {
-    let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgName + '-' + 'gateway', options, () => {
+    let connect = mongoose.createConnection('mongodb://' + ip + ':' + port + '/' + myOrgIndex + '-' + 'gateway', options, () => {
         logger.info('gateway db connect')
     })
     connect.on('reconnected', () => {

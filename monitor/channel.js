@@ -164,10 +164,14 @@ var channel = class {
         })
     }
     updateChannelInfo() {
+        logger.debug('<== updateChannelInfo s ===>');
         var channelInfo = hyperUtil.helper.cloneJSON(this.summary)
         delete channelInfo._id
         delete channelInfo.__v
-        return channelMethod.updateChannel(this.peerName, channelInfo)
+        return channelMethod.updateChannel(this.peerName, channelInfo).then(() => {
+            logger.debug('<== updateChannelInfo f ===>');
+
+        })
     }
     updateChaincodeInfo() {
         let promiseArr = []
@@ -400,6 +404,22 @@ var channel = class {
             chaincodeInfo.invokeTimes++;
         }
     }
+    cleanChannelCahe() {
+        this.summary = {
+            txNum: 0,
+            validNum: 0,
+            unValidNum: 0,
+            blockNum: 0,
+            deployTimes: 0,
+            invokeTimes: 0,
+            configTimes: 0,
+            channelName: this.channelName
+        }
+        this.diffChaincodes = [],
+        this.blockNumberArray = []
+        this.currentHeight = 0;
+        this.chaincodes = {};
+    }
     cleanDb() {
         logger.info('clean db for peer %s channel %s', this.peerName, this.channelName)
         let promiseArr = []
@@ -409,6 +429,8 @@ var channel = class {
         promiseArr.push(chaincodeMethod.removeChaincodeInfo(this.peerName, {
             channelName: this.channelName
         }))
+        this.cleanChannelCahe();
+
         return Promise.all(promiseArr).then(() => {
             logger.info('clean finish')
         })

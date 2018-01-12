@@ -30,7 +30,7 @@
         }
     },
     "fabric": {
-        "orgName": "org1",
+        "orgIndex": "org1",
         "mode": "prod",
         "keyValueStore": {
             "type": "fs",

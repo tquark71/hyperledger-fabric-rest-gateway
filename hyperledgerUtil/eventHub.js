@@ -7,7 +7,7 @@ var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../config');
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var log4js = require('log4js');
 var tcpp = require('tcp-ping')
 var logger = log4js.getLogger('util/eventHub');
@@ -34,23 +34,23 @@ gatewayEventHub.on('admin-changed', () => {
     }
 })
 gatewayEventHub.on('n-peer-revise', (reviseInfo) => {
-    let {orgName, peerName, attribute} = reviseInfo;
-    if (orgName == myOrgName && attribute == 'events') {
+    let {orgIndex, peerName, attribute} = reviseInfo;
+    if (orgIndex == myOrgIndex && attribute == 'events') {
         logger.debug('try recnnect to events hub cause events attribute has been changed')
         if (peersEventHub[peerName]) {
             copyCallBackSet(peerName);
             peersEventHub[peerName].eh.disconnect();
             resetCallbackSet(peerName);
             client.setUserContext(user.getOrgAdmin());
-            let opt = helper.getOpt(myOrgName, peerName)
-            peersEventHub[peerName].eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peerName]['events']), opt)
+            let opt = helper.getOpt(myOrgIndex, peerName)
+            peersEventHub[peerName].eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgIndex][peerName]['events']), opt)
             peersEventHub[peerName].eh.connect()
         }
     }
 })
-gatewayEventHub.on('n-remove-peer', (orgName, peerName) => {
+gatewayEventHub.on('n-remove-peer', (orgIndex, peerName) => {
     logger.debug('receive n-remove-peer to delete event hub connect')
-    if (orgName == myOrgName) {
+    if (orgIndex == myOrgIndex) {
         if (peersEventHub[peerName]) {
             let eh = peersEventHub[peerName].eh;
             eh.disconnect();
@@ -58,26 +58,26 @@ gatewayEventHub.on('n-remove-peer', (orgName, peerName) => {
         }
     }
 })
-var checkPeerNameExist = (peerName, orgName) => {
-    if (ORGS[orgName].hasOwnProperty(peerName)) {
+var checkPeerNameExist = (peerName, orgIndex) => {
+    if (ORGS[orgIndex].hasOwnProperty(peerName)) {
         return true
     } else {
         return false
     }
 }
-function getOrgEventHubs(userContext, channelName, orgName) {
-    orgName = orgName || myOrgName
+function getOrgEventHubs(userContext, channelName, orgIndex) {
+    orgIndex = orgIndex || myOrgIndex
     logger.debug('start to get event hubs getOrgEventHubs')
     var ehs = []
     var orgPeerInChannel = true
     if (channelName) {
         orgPeerInChannel = false
-        if (channelConfig[channelName].peers.hasOwnProperty(orgName)) {
+        if (channelConfig[channelName].peers.hasOwnProperty(orgIndex)) {
             orgPeerInChannel = true
         }
     }
     if (orgPeerInChannel) {
-        for (let peer in ORGS[orgName]) {
+        for (let peer in ORGS[orgIndex]) {
             if (peer.indexOf('peer') > -1) {
                 logger.debug(`join ${peer} eh in to event hub`)
                 client._userContext = userContext;
@@ -91,13 +91,13 @@ function getOrgEventHubs(userContext, channelName, orgName) {
 }
 function getEventHubByIp(ip, userContext) {
     logger.debug('start to get %s evenhub', ip)
-    for (let peer in ORGS[myOrgName]) {
+    for (let peer in ORGS[myOrgIndex]) {
         if (peer.indexOf('peer') > -1) {
-            if (ORGS[myOrgName][peer].events.indexOf(ip) > -1) {
+            if (ORGS[myOrgIndex][peer].events.indexOf(ip) > -1) {
                 client.setUserContext(userContext, true);
                 let eh = client.newEventHub();
-                let opt = helper.getOpt(myOrgName, peer)
-                eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peer]['events']), opt)
+                let opt = helper.getOpt(myOrgIndex, peer)
+                eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgIndex][peer]['events']), opt)
                 eh.connect();
                 return eh
             }
@@ -118,21 +118,21 @@ var closeEhs = function(ehs) {
 function getEventHubByChannel(channelName, userContext) {
     logger.debug('start to get event hub by channel');
     var ehs = [];
-    for (let peerIndex in channelConfig[channelName].peers[myOrgName]) {
-        let peerName = channelConfig[channelName].peers[myOrgName][peerIndex].name
+    for (let peerIndex in channelConfig[channelName].peers[myOrgIndex]) {
+        let peerName = channelConfig[channelName].peers[myOrgIndex][peerIndex].name
 
         ehs.push(getEventHubByName(peerName, userContext))
     }
     return ehs
 }
 function getEventHubByName(peerName, userContext) {
-    if (checkPeerNameExist(peerName, myOrgName)) {
+    if (checkPeerNameExist(peerName, myOrgIndex)) {
         logger.debug('start to get %s evenhub', peerName)
         client.setUserContext(userContext, true);
         let eh = client.newEventHub();
-        let opt = helper.getOpt(myOrgName, peerName)
-        logger.debug('event hub url is ' + ORGS[myOrgName][peerName]['events'])
-        eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgName][peerName]['events']), opt)
+        let opt = helper.getOpt(myOrgIndex, peerName)
+        logger.debug('event hub url is ' + ORGS[myOrgIndex][peerName]['events'])
+        eh.setPeerAddr(helper.transferSSLConfig(ORGS[myOrgIndex][peerName]['events']), opt)
         eh.connect();
         logger.debug('finish get eventhub')
         return eh

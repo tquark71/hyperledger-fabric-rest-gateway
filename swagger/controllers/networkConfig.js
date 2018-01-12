@@ -7,7 +7,7 @@ var log4js = require('log4js');
 var logger = log4js.getLogger('swagger/networkConfig');
 var networkConfig = hyUtil.networkConfig;
 var config = require('../../config');
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 module.exports.nAddOrg = (req, res, next) => {
     logger.debug('<======  nAddOrg start ======> ')
     var body = req.swagger.params.request.value
@@ -15,9 +15,9 @@ module.exports.nAddOrg = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {orgName, gatewayAddress, name, mspid, ca, peers, admin} = body;
-    networkConfig.nAddOrg(orgName, gatewayAddress, name, mspid, ca, peers, admin).then(() => {
-        response.returnSuccess(`add ${orgName} success`, res);
+    let {orgIndex, gatewayAddress, name, mspid, ca, peers, admin} = body;
+    networkConfig.nAddOrg(orgIndex, gatewayAddress, name, mspid, ca, peers, admin).then(() => {
+        response.returnSuccess(`add ${orgIndex} success`, res);
     }).catch((err) => {
         logger.warn('catch err')
         logger.debug(err)
@@ -48,9 +48,9 @@ module.exports.nRemoveOrgs = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {orgNames} = body;
-    networkConfig.nRemoveOrgs(orgNames).then(() => {
-        response.returnSuccess(`remove ${orgNames} success`, res);
+    let {orgIndexs} = body;
+    networkConfig.nRemoveOrgs(orgIndexs).then(() => {
+        response.returnSuccess(`remove ${orgIndexs} success`, res);
     }).catch((err) => {
         logger.warn('catch err')
         logger.debug(err)
@@ -65,9 +65,9 @@ module.exports.nAddPeers = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {orgName, peers} = body;
-    networkConfig.nAddPeers(orgName, peers).then(() => {
-        response.returnSuccess(`add peers to ${orgName} success`, res);
+    let {orgIndex, peers} = body;
+    networkConfig.nAddPeers(orgIndex, peers).then(() => {
+        response.returnSuccess(`add peers to ${orgIndex} success`, res);
     }).catch((err) => {
         logger.warn('catch err')
         logger.debug(err)
@@ -82,10 +82,10 @@ module.exports.cRemoveOrgInChannel = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {channelName, orgName} = body;
-    networkConfig.cRemoveOrgInChannel(channelName, orgName).then((result) => {
+    let {channelName, orgIndex} = body;
+    networkConfig.cRemoveOrgInChannel(channelName, orgIndex).then((result) => {
 
-        response.returnSuccess(`remove ${orgName} from channel ${channelName} success`, res);
+        response.returnSuccess(`remove ${orgIndex} from channel ${channelName} success`, res);
     }).catch((err) => {
         logger.warn('catch err')
         logger.debug(err)
@@ -134,8 +134,8 @@ module.exports.cAddPeerInChannel = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {channelName, peerName, orgName, type} = body;
-    networkConfig.cAddPeerInChannel(channelName, orgName, peerName, type).then(() => {
+    let {channelName, peerName, orgIndex, type} = body;
+    networkConfig.cAddPeerInChannel(channelName, orgIndex, peerName, type).then(() => {
         logger.debug('auto try to trigger join channel method to join peer into channel')
         return hyUtil.channelAPI.joinChannel(channelName, userObj, peerName).then((result) => {
             return ('Change channel config success, auto join channel success');
@@ -159,13 +159,13 @@ module.exports.cAddOrgInChannel = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {channelName, orgName, peerObjArr} = body;
+    let {channelName, orgIndex, peerObjArr} = body;
     let orgObj = {
-        orgName,
+        orgIndex,
         peerObjArr: peerObjArr
     };
     networkConfig.cAddOrgInChannel(channelName, orgObj).then(() => {
-        if (orgObj.orgName == myOrgName) {
+        if (orgObj.orgIndex == myOrgIndex) {
             logger.debug('auto try to trigger join channel method to join peer into channel')
             return hyUtil.channelAPI.joinChannel(channelName, userObj).then((result) => {
                 return ('Change channel config success, auto join channel success');
@@ -194,10 +194,10 @@ module.exports.nRemovePeers = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {peerNames, orgName} = body;
-    networkConfig.nRemovePeers(orgName, peerNames).then(() => {
+    let {peerNames, orgIndex} = body;
+    networkConfig.nRemovePeers(orgIndex, peerNames).then(() => {
         logger.debug('remove peer from network-config success');
-        return (`remove peers ${peerNames} of ${orgName} from network-config success`)
+        return (`remove peers ${peerNames} of ${orgIndex} from network-config success`)
     }).then((result) => {
         response.returnSuccess(result, res);
     }).catch((err) => {
@@ -214,10 +214,10 @@ module.exports.cRemovePeer = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {channelName, peerName, orgName} = body;
-    networkConfig.cRemovePeerInChannel(channelName, orgName, peerName).then(() => {
+    let {channelName, peerName, orgIndex} = body;
+    networkConfig.cRemovePeerInChannel(channelName, orgIndex, peerName).then(() => {
         logger.debug('remove peer from channel config success');
-        return (`remove peer ${peerName} of ${orgName} from channel ${channelName} success`)
+        return (`remove peer ${peerName} of ${orgIndex} from channel ${channelName} success`)
     }).then((result) => {
         response.returnSuccess(result, res);
     }).catch((err) => {
@@ -234,8 +234,8 @@ module.exports.nRevisePeer = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {orgName, peerName, attribute, value} = body;
-    networkConfig.nRevisePeer(orgName, peerName, attribute, value).then(() => {
+    let {orgIndex, peerName, attribute, value} = body;
+    networkConfig.nRevisePeer(orgIndex, peerName, attribute, value).then(() => {
         logger.debug(`revise peer ${peerName} ${attribute} to ${value} sucess`);
         return (`revise peer ${peerName} ${attribute} to ${value} sucess`);
     }).then((result) => {
@@ -254,10 +254,10 @@ module.exports.nReviseOrg = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {orgName, attribute, value} = body;
-    networkConfig.nReviseOrg(orgName, attribute, value).then(() => {
-        logger.debug(`revise org ${orgName} ${attribute} to ${value} sucess`);
-        return (`revise org ${orgName} ${attribute} to ${value} sucess`);
+    let {orgIndex, attribute, value} = body;
+    networkConfig.nReviseOrg(orgIndex, attribute, value).then(() => {
+        logger.debug(`revise org ${orgIndex} ${attribute} to ${value} sucess`);
+        return (`revise org ${orgIndex} ${attribute} to ${value} sucess`);
     }).then((result) => {
         response.returnSuccess(result, res);
     }).catch((err) => {
@@ -277,8 +277,8 @@ module.exports.nReviseOrderer = (req, res, next) => {
     let userObj = req.gUser;
     let {ordererName, attribute, value} = body;
     networkConfig.nReviseOrderer(ordererName, attribute, value).then(() => {
-        logger.debug(`revise org ${orgName} ${attribute} to ${value} sucess`);
-        return (`revise org ${orgName} ${attribute} to ${value} sucess`);
+        logger.debug(`revise org ${orgIndex} ${attribute} to ${value} sucess`);
+        return (`revise org ${orgIndex} ${attribute} to ${value} sucess`);
     }).then((result) => {
         response.returnSuccess(result, res);
     }).catch((err) => {
@@ -336,8 +336,8 @@ module.exports.cChangePeerTypeChannel = (req, res, next) => {
         response.returnFailed(gErr, res)
     }
     let userObj = req.gUser;
-    let {channelName, orgName, peerName, peerType} = body;
-    networkConfig.cChangePeerTypeChannel(channelName, orgName, peerName, peerType).then(() => {
+    let {channelName, orgIndex, peerName, peerType} = body;
+    networkConfig.cChangePeerTypeChannel(channelName, orgIndex, peerName, peerType).then(() => {
         logger.debug(`Change PeerType for ${peerName} at Channel ${channelName} sucess`);
         return (`Change PeerType for ${peerName} at Channel ${channelName} sucess`);
     }).then((result) => {

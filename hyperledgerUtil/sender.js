@@ -305,13 +305,13 @@ var sender = class {
     }
     sendProposalToOrg(mspID, role) {
 
-        let orgName = helper.getOrgNameByMspID(mspID)
-        if (!orgName) {
+        let orgIndex = helper.getOrgIndexByMspID(mspID)
+        if (!orgIndex) {
             return Promise.reject('can not find mspId in network config')
         }
-        let targets = peers.getChannelTargetByPeerType(this.channel.getName(), orgName, 'e', role)
+        let targets = peers.getChannelTargetByPeerType(this.channel.getName(), orgIndex, 'e', role)
         if (targets.length <= 0) {
-            return Promise.reject(util.format('no endorse peer of org %s in channel %s ', orgName, this.channel.getName()))
+            return Promise.reject(util.format('no endorse peer of org %s in channel %s ', orgIndex, this.channel.getName()))
         } else {
             logger.debug('get targets');
             logger.debug('send method is ' + this.sendType)

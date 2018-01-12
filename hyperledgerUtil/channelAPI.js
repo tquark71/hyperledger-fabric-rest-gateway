@@ -1,6 +1,7 @@
 var client = require('./client')
 var channels = require('./channels');
 var Channel = require('fabric-client/lib/Channel');
+var configgen = require('./configgen')
 var signRequestManager = require('./signRequest/signRequestManager');
 var TransactionID = require('fabric-client/lib/TransactionID');
 var fs = require('fs')
@@ -10,11 +11,12 @@ var hfc = require('fabric-client');
 var user = require('./user')
 var eventHub = require('./eventHub');
 var config = require('../config');
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var log4js = require('log4js');
 var logger = log4js.getLogger('util/channelAPI');
 var helper = require('./helper')
 var peers = require('./peers');
+var orderers = require('./orderers')
 var constants = require('../constants')
 logger.setLevel(config.gateway.logLevel);
 var grpc = require('grpc');
@@ -38,7 +40,7 @@ var getChaincodeEnodrsememtPolicy = (peerName, channelName, chaincodeName, userC
     })
 }
 var getChaincodeData = (peerName, channelName, chaincodeName, userContext) => {
-    var target = peers.getPeerByName(peerName, myOrgName);
+    var target = peers.getPeerByName(peerName, myOrgIndex);
     client._userContext = userContext;
     // var signer = userContext.getSigningIdentity();
     var txId = new TransactionID(userContext);
@@ -102,7 +104,7 @@ var getInstalledChaincodes = function(channelName, peerName, type, userContext) 
     var channel = channels[channelName]
     var target
     if (peerName) {
-        target = peers.getPeerByName(peerName, myOrgName)
+        target = peers.getPeerByName(peerName, myOrgIndex)
     }
     function switchType() {
         if (type === 'installed') {
@@ -141,7 +143,7 @@ var getInstalledChaincodes = function(channelName, peerName, type, userContext) 
 //used to init channel before the instantiated channel
 var initChannel = (channelName, userContext) => {
     client._userContext = userContext;
-    return channels[channelName].initialize()
+    return channels[channelName].initialize();
 }
 
 var getBlockActionsByNumber = function(channelName, peerName, blockNumber, userContext) {
@@ -251,47 +253,113 @@ var getChannels = function(peerName, userContext) {
         });
 
 };
+var AddChannelByConfigUpdate = (configUpdate) => {
+    return configgen.turnConfigUpdatePbToJson(configUpdate).then((res) => {
+        logger.debug('start parse configupdate.pb to Json')
+        let configUpdateJson = JSON.parse(res);
+        let channelName = configUpdateJson.channel_id;
+        logger.warn('can not find channel config for channel ' + channelName)
+        logger.warn('create new channel config by parse the update config and choose orderer randomly');
+        let involvedMspIDArray = [];
+        let orgObjArr = [];
+        let groups = configUpdateJson.read_set.groups.Application.groups;
+        logger.debug('groups')
+        logger.debug(groups);
+        for (let mspID in groups) {
+            involvedMspIDArray.push(mspID);
+        }
+        for (let mspID of involvedMspIDArray) {
+            let peerNameArray = networkConfig.getPeerArrayByMspID(mspID);
+            let orgObj = {}
+            orgObj.orgIndex = networkConfig.getOrgIndexByMspID(mspID);
+            orgObj.peerObjArr = [];
+            for (let peerName of peerNameArray) {
+                orgObj.peerObjArr.push({
+                    name: peerName,
+                    type: "e"
+                })
+            }
+            orgObjArr.push(orgObj)
+        }
+        let orderer = orderers.getOrdererRandomly();
 
-var createChannel = function(channelName, sourceType, source, userContext) {
+        return networkConfig.cAddChannel(channelName, [orderer._name[1]], orgObjArr)
+    })
+}
+var createChannel = function(channelName, sourceType, source, userContext, opt) {
     // read in the envelope for the channel config raw bytes
     client._userContext = userContext;
+    logger.debug(util.format('Successfully acquired admin user for the organization "%s"', myOrgIndex));
     var envelope;
     var configUpdate;
-    channels.getChannel(channelName)
-    if (sourceType == 'local') {
-        envelope = fs.readFileSync(path.join(__dirname, '../artifacts/channel', source));
-    } else if (sourceType == 'buffer') {
-        envelope = new Buffer.from(source)
-    }
-    configUpdate = client.extractChannelConfig(envelope);
-    logger.debug(util.format('Successfully acquired admin user for the organization "%s"', myOrgName));
-    let signature = client.signChannelConfig(configUpdate);
+    let haveChannelConfig = false;
 
-    let request = {
-        config: configUpdate,
-        signatures: [signature],
-        name: channelName,
-        orderer: channels[channelName].getOrderers()[0],
-        txId: client.newTransactionID()
-    };
-    // send to orderer
-    return client.createChannel(request)
-        .then((response) => {
-            logger.debug(' response ::%j', response);
-            if (response && response.status === 'SUCCESS') {
-                logger.debug('Successfully created the channel.');
-
-                return `Channel ${channelName} created Successfully`;
-            } else {
-                return Promise.reject('Failed to create the channel \'' + channelName + '\' \n\n')
+    return new Promise((rs, rj) => {
+        if (sourceType == 'local') {
+            envelope = fs.readFileSync(path.join(__dirname, '../artifacts/channel', source));
+            configUpdate = client.extractChannelConfig(envelope);
+            rs(configUpdate)
+        } else if (sourceType == 'buffer') {
+            envelope = new Buffer.from(source)
+            configUpdate = client.extractChannelConfig(envelope);
+            rs(configUpdate)
+        } else if (sourceType == 'json') {
+            if (source.hasOwnProperty('consortiumName') && source.hasOwnProperty('joinMspIDArray')) {
+                configgen.createNewChannelConfigUpdatePb(channelName, source.consortiumName, source.joinMspIDArray, opt).then((tConfigUpdate) => {
+                    logger.debug('json type send buffer to sign')
+                    logger.debug(configUpdate)
+                    configUpdate = tConfigUpdate
+                    rs(tConfigUpdate)
+                })
             }
-        });
+        } else {
+            rj('unkonwn source type');
+        }
+    }).then(() => {
+        let orderer;
+        try {
+            channel = channels.getChannel(channelName)
+            orderer = channel.getOrderers()[0];
+            haveChannelConfig = true;
+        } catch (e) {
+            orderer = orderers.getOrdererRandomly()
+            logger.debug('get orderer');
+            logger.debug(orderer)
+        }
+        let signature = client.signChannelConfig(configUpdate);
+        let request = {
+            config: configUpdate,
+            signatures: [signature],
+            name: channelName,
+            orderer: orderer,
+            txId: client.newTransactionID()
+        };
+        return client.createChannel(request)
+            .then((response) => {
+                logger.debug(' response ::%j', response);
+                if (response && response.status === 'SUCCESS') {
+                    logger.debug('Successfully created the channel.');
+                    return `Channel ${channelName} created Successfully`;
+                } else {
+                    return Promise.reject('Failed to create the channel \'' + channelName + '\' \n\n')
+                }
+            }).then((res) => {
+            if (!haveChannelConfig) {
+                return AddChannelByConfigUpdate(configUpdate).then(() => {
+                    return res
+                })
+            } else {
+                return res
+            }
+        })
+
+    });
 };
 var joinChannel = function(channelName, userContext, peerName) {
     channels.getChannel(channelName)
     client._userContext = userContext;
 
-    logger.info(util.format('Calling peers in organization "%s" to join the channel', myOrgName));
+    logger.info(util.format('Calling peers in organization "%s" to join the channel', myOrgIndex));
 
 
     var channel = channels[channelName]
@@ -307,9 +375,9 @@ var joinChannel = function(channelName, userContext, peerName) {
             tx_id = client.newTransactionID();
             var targets;
             if (peerName) {
-                targets = [peers.getPeerByName(peerName, myOrgName)]
+                targets = [peers.getPeerByName(peerName, myOrgIndex)]
             } else {
-                targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'all')
+                targets = peers.getChannelTargetByPeerType(channelName, myOrgIndex, 'all')
             }
             var request = {
                 targets: targets,
@@ -363,10 +431,10 @@ var joinChannel = function(channelName, userContext, peerName) {
         }).then((results) => {
         logger.debug(util.format('Join Channel R E S P O N S E : %j', results));
         if (results[0] && results[0][0] && results[0][0].response && results[0][0].response.status == 200) {
-            logger.info(util.format('Successfully joined peers in organization %s to the channel %s', myOrgName, channelName));
+            logger.info(util.format('Successfully joined peers in organization %s to the channel %s', myOrgIndex, channelName));
             eventHub.closeEhs(eventhubs)
 
-            return util.format('Successfully joined peers in organization %s to the channel %s', myOrgName, channelName);
+            return util.format('Successfully joined peers in organization %s to the channel %s', myOrgIndex, channelName);
         } else {
             logger.error(' Failed to join channel');
             eventHub.closeEhs(eventhubs)
@@ -381,10 +449,11 @@ var getChannelConfig = (channelName, userContext, writePath) => {
     var channel = channels[channelName]
     client._userContext = userContext;
     return channel.getChannelConfig().then((configEnvolop) => {
+        console.log(configEnvolop)
         configEnvolop = configEnvolop.toBuffer()
         if (writePath) {
 
-            fs.writeFileSync(path.resolve(__dirname, '../artifacts/', writePath), configEnvolop.toBuffer())
+            fs.writeFileSync(path.resolve(__dirname, '../artifacts/', writePath), configEnvolop)
         }
         return Promise.resolve(configEnvolop)
     })

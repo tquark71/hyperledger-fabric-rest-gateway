@@ -9,7 +9,7 @@ var blockMethod = DBMethods.blockMethod;
 var log4js = require('log4js');
 var logger = log4js.getLogger('monitor');
 logger.setLevel(config.gateway.logLevel);
-var myOrgName = config.fabric.orgName;
+var myOrgIndex = config.fabric.orgIndex;
 var networkConfig = hyperUtil.networkConfig;
 var ORGS = networkConfig.getNetworkConfig();
 var Peer = require('./peer')
@@ -17,25 +17,25 @@ var gatewayEventHub = require('../gatewayEventHub');
 // var monitorIoAPIs = require('./ioAPI')
 peers = {}
 var io = require('../io').getIo();
-gatewayEventHub.on('n-peer-add', (orgName, peerName) => {
+gatewayEventHub.on('n-peer-add', (orgIndex, peerName) => {
     logger.debug('receive event');
     logger.debug('<======= n-peer-remove ========>');
-    logger.debug('orgName');
-    logger.debug(orgName);
+    logger.debug('orgIndex');
+    logger.debug(orgIndex);
     logger.debug('peerName');
     logger.debug(peerName);
-    if (orgName == myOrgName) {
+    if (orgIndex == myOrgIndex) {
         initPeer(peerName);
     }
 })
-gatewayEventHub.on('n-peer-remove', (orgName, peerName) => {
+gatewayEventHub.on('n-peer-remove', (orgIndex, peerName) => {
     logger.debug('receive event');
     logger.debug('<======= n-peer-remove ========>');
-    logger.debug('orgName');
-    logger.debug(orgName);
+    logger.debug('orgIndex');
+    logger.debug(orgIndex);
     logger.debug('peerName');
     logger.debug(peerName);
-    if (orgName == myOrgName) {
+    if (orgIndex == myOrgIndex) {
         getPeer(peerName).then((peer) => {
             peer.delete();
             delete peers[peerName];
@@ -46,12 +46,12 @@ gatewayEventHub.on('n-peer-remove', (orgName, peerName) => {
 // internal method to init monitor/peer object
 var initPeer = (peerName) => {
     logger.info('new monitor peer obj for peer %s', peerName)
-    peers[peerName] = new Peer(peerName, ORGS[myOrgName][peerName].requests, io)
+    peers[peerName] = new Peer(peerName, ORGS[myOrgIndex][peerName].requests, io)
     peers[peerName].start()
 }
 var initDB = () => {
     logger.info('start to monitor')
-    for (let peer in ORGS[myOrgName]) {
+    for (let peer in ORGS[myOrgIndex]) {
         if (peer.indexOf('peer') > -1) {
             initPeer(peer)
         }

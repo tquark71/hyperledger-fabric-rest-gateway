@@ -41,7 +41,7 @@ var makeCryptoSuiteAndSetStore = () => {
 
         } else {
             let store = hfc.newCryptoKeyStore({
-                path: path.resolve(__dirname, '../', config.fabric.keyValueStore.fs.path, config.fabric.orgName, "crypto")
+                path: path.resolve(__dirname, '../', config.fabric.keyValueStore.fs.path, config.fabric.orgIndex, "crypto")
             })
             cryptoSuite.setCryptoKeyStore(store);
             rs(cryptoSuite)
@@ -63,7 +63,7 @@ var makeKeyValStore = () => {
         } else {
             logger.debug('use fs to be key value store')
             hfc.newDefaultKeyValueStore({
-                path: path.resolve(__dirname, '../', config.fabric.keyValueStore.fs.path, config.fabric.orgName, "keyValue")
+                path: path.resolve(__dirname, '../', config.fabric.keyValueStore.fs.path, config.fabric.orgIndex, "keyValue")
             }).then((store) => {
                 rs(store)
 

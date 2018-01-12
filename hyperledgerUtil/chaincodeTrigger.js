@@ -9,7 +9,7 @@ var user = require('./user')
 var hfc = require('fabric-client');
 var EventHub = require('fabric-client/lib/EventHub.js');
 var config = require('../config');
-var myOrgName = config.fabric.orgName
+var myOrgIndex = config.fabric.orgIndex
 var log4js = require('log4js');
 var logger = log4js.getLogger('chaincodeTrigger');
 var channelAPI = require('./channelAPI')
@@ -100,7 +100,7 @@ var installChaincode = function(channelName, chaincodeName, sourceType, chaincod
         if (opt && opt.targetList) {
             targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgIndex, 'e')
         }
     }
     logger.info('start to install chaincode on peers')
@@ -126,8 +126,8 @@ var installChaincode = function(channelName, chaincodeName, sourceType, chaincod
         let proposalGood = Sender.checkProposal(null, results)
         if (proposalGood) {
             logger.info(util.format('Successfully sent install Proposal and received ProposalResponse'));
-            logger.debug('\nSuccessfully Installed chaincode on organization ' + myOrgName + '\n');
-            return 'Successfully Installed chaincode on organization ' + myOrgName;
+            logger.debug('\nSuccessfully Installed chaincode on organization ' + myOrgIndex + '\n');
+            return 'Successfully Installed chaincode on organization ' + myOrgIndex;
         } else {
             let response = Sender.makeProposalResponse(targets, results[0], 'install')
             logger.error(response)
@@ -387,11 +387,11 @@ var invokeChaincodeByEndorsePolice = (channelName, chaincodeName, fcn, args, use
 var getChaincodePolicy = (channelName, chaincodeName, userContext) => {
     logger.debug('get channelName %s chaincode %s endorse policy', channelName, chaincodeName)
     let peerName;
-    let peerList = channelConfig[channelName]['peers'][myOrgName]
+    let peerList = channelConfig[channelName]['peers'][myOrgIndex]
     logger.debug(peerList)
     for (let peerIndex in peerList) {
         logger.debug('check peerInfo', peerList[peerIndex])
-        let peerStatus = peers.getPeerAliveState(peerList[peerIndex].name, myOrgName)
+        let peerStatus = peers.getPeerAliveState(peerList[peerIndex].name, myOrgIndex)
         logger.debug(peerStatus)
         if (peerStatus) {
             logger.debug('get chaincode endorsement policy from %s', peerList[peerIndex].name)
@@ -417,7 +417,7 @@ var queryChaincode = function(channelName, chaincodeName, fcn, args, userContext
         if (opt && opt.targetList) {
             targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgIndex, 'e')
         }
     // TO DO use endorsePolicy to assign target
     }
@@ -473,7 +473,7 @@ var queryHistory = function(channelName, chaincodeName, fcn, args, userContext, 
         if (opt) {
             targets = peers.getTargetsByOpt(opt.targetList)
         } else {
-            targets = peers.getChannelTargetByPeerType(channelName, myOrgName, 'e')
+            targets = peers.getChannelTargetByPeerType(channelName, myOrgIndex, 'e')
         }
     }
     var request = {

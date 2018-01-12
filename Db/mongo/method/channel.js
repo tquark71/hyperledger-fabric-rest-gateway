@@ -8,7 +8,9 @@ var updateChannel = (peerName, channel) => {
         channelName: channel.channelName,
     }, channel, {
         upsert: true
-    }).then()
+    }).then((res)=>{
+        return res
+    })
 }
 var removeChannel = (condition) => {
     let channelDB = mongo.getDbs(peerName, DBName)

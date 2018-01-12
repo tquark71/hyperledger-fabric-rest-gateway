@@ -82,7 +82,7 @@ paths:
           examples:
             application/json: |-
                 // Non-validating peer
-                {"sdkResult": "Error: can not get peer $peerName in org $orgName"},
+                {"sdkResult": "Error: can not get peer $peerName in org $orgIndex"},
 
                 // Invailed channel name
                 {"sdkResult": "Error: invailed channel name, plz check your network config has the config of channel $channelName"}
@@ -176,11 +176,18 @@ paths:
             sourceType:
               type: string
               description: Method to get the genesis tx file ###
-              enum: ["local","buffer","signRequest"]
+              enum: ["local","buffer","signRequest","json"]
             source:
               example: mychannel.tx
               description: "Filename of genesis tx file in the /artifacts/channel/, obtained from the configgen tool."
-              type: "string"
+            opt:
+              type: object
+              properties:
+                attributeArray:
+                  description: When using sourceType json, you can choose none default value by using attribute Array to replace default value.
+                  type: array
+                  items:
+                    type: object
             user:
               $ref: "#/definitions/user"
       responses:
@@ -830,7 +837,7 @@ paths:
       - "NetworkConfig"
       summary: ""
       description: ""
-      operationId: "nAddPeers"
+      operationId: "nAddOrg"
       produces:
       - "application/json"
       parameters:
@@ -840,12 +847,14 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["orgName",peers","user"]
+          required: ["orgIndex","name",peers","user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             peers:
               type: object
+            name:
+              type: string
             user:
               $ref: "#/definitions/user"
       responses:
@@ -868,9 +877,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["orgName","peer","user"]
+          required: ["orgIndex","peer","user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             peer:
               type: object
@@ -928,9 +937,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: [orgName,"user"]
+          required: [orgIndex,"user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             user:
               $ref: "#/definitions/user"
@@ -954,9 +963,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["orgName","peerName","user"]
+          required: ["orgIndex","peerName","user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             peerName:
               type: string
@@ -1008,9 +1017,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: [orgName, attribute, value,"user"]
+          required: [orgIndex, attribute, value,"user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             attribute:
               type: string
@@ -1039,9 +1048,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: [orgName, peerName, attribute, value,"user"]
+          required: [orgIndex, peerName, attribute, value,"user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             peerName:
               type: string
@@ -1135,11 +1144,11 @@ paths:
         required: true
         schema:
           type: "object"
-          required: [channelName, orgName,"user"]
+          required: [channelName, orgIndex,"user"]
           properties:
             channelName:
               type: string
-            orgName:
+            orgIndex:
               type: string
             peerObjArr:
               type: array
@@ -1193,9 +1202,9 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["channelName","orgName","peerName","type","user"]
+          required: ["channelName","orgIndex","peerName","type","user"]
           properties:
-            orgName:
+            orgIndex:
               type: string
             channelName:
               type: string
@@ -1225,11 +1234,11 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["channelName","orgName","user"]
+          required: ["channelName","orgIndex","user"]
           properties:
             channelName:
               type: string
-            orgName:
+            orgIndex:
               type: string
             user:
               $ref: "#/definitions/user"
@@ -1253,11 +1262,11 @@ paths:
         required: true
         schema:
           type: "object"
-          required: ["channelName","orgName","peerName","user"]
+          required: ["channelName","orgIndex","peerName","user"]
           properties:
             channelName:
               type: string
-            orgName:
+            orgIndex:
               type: string
             peerName:
               type: string
@@ -1311,11 +1320,11 @@ paths:
         required: true
         schema:
           type: "object"
-          required: [channelName, orgName, peerName, peerType]
+          required: [channelName, orgIndex, peerName, peerType]
           properties:
             channelName:
               type: string
-            orgName:
+            orgIndex:
               type: string
             peerName:
               type: string

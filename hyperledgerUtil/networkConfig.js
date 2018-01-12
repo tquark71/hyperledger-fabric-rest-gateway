@@ -8,11 +8,13 @@ var networkConfig = outerNetworkconfig['network-config']
 var channelConfig = outerNetworkconfig['channelConfig'];
 const ordererAttributeList = ['url', 'server-hostname', 'tls_cacerts'];
 var gatewayEventHub = require('../gatewayEventHub');
-var myOrgName = config.fabric.orgName;
+var myOrgIndex = config.fabric.orgIndex;
 var log4js = require('log4js');
 var logger = log4js.getLogger('hyUtil/networkConfig');
 var Promise = require('bluebird');
+// var configgen = require('./configgen')
 // network-config operation
+
 var nReviseAttribute = (indexArr, value) => {
     let lastAttr = indexArr.pop()
     let attrNeedToChange = indexArr.reduce((nowObject, indexName) => {
@@ -29,6 +31,49 @@ var nReviseAttribute = (indexArr, value) => {
     return Promise.resolve();
 
 }
+var getOrgByMspID = (mspID) => {
+    logger.debug('<==== getOrgByMspID start =====>');
+    logger.debug('find mspID ' + mspID);
+    for (var orgIndex in networkConfig) {
+        if (networkConfig[orgIndex].mspid && networkConfig[orgIndex].mspid == mspID) {
+            logger.debug('fined orgIndex is ' + orgIndex)
+            logger.debug('<==== getOrgByMspID f =====>');
+            return networkConfig[orgIndex]
+        }
+    }
+    return null
+}
+var getOrgIndexByMspID = (mspID) => {
+    logger.debug('<==== getOrgIndexByMspID start =====>');
+    logger.debug('find mspID ' + mspID);
+    for (var orgIndex in networkConfig) {
+        if (networkConfig[orgIndex].mspid && networkConfig[orgIndex].mspid == mspID) {
+            logger.debug('fined orgIndex is ' + orgIndex)
+            logger.debug('<==== getOrgIndexByMspID f =====>');
+            return orgIndex
+        }
+    }
+    return null
+}
+module.exports.getOrgIndexByMspID = getOrgIndexByMspID;
+module.exports.getOrgByMspID = getOrgByMspID
+module.exports.getPeerArrayByMspID = (mspID) => {
+    let peerNameArray = [];
+    logger.debug('<==== getPeerArrayByMspID start =====>')
+    let org = getOrgByMspID(mspID)
+    if (org) {
+        for (var peerName in org) {
+            if (peerName.indexOf('peer') > -1) {
+                peerNameArray.push(peerName)
+            }
+        }
+    }
+
+    logger.debug('peerNameArray')
+    logger.debug(peerNameArray)
+    logger.debug('<==== getPeerArrayByMspID f =====>')
+    return peerNameArray
+}
 module.exports.nReviseOrderer = (ordererName, attribute, value) => {
     let indexArr = [];
     indexArr.push(ordererName);
@@ -39,16 +84,16 @@ module.exports.nReviseOrderer = (ordererName, attribute, value) => {
         gatewayEventHub.emit('n-orderer-revise', ordererName, attribute);
     });
 }
-module.exports.nReviseOrg = (orgName, attribute, value) => {
+module.exports.nReviseOrg = (orgIndex, attribute, value) => {
     if (attribute == 'mspid') {
         return Promise.reject('Ammend mspid is illegaled.');
     }
     let indexArr = [];
-    indexArr.push(orgName);
+    indexArr.push(orgIndex);
     indexArr.push(attribute);
     return nReviseAttribute(indexArr, value).then(() => {
         gatewayEventHub.emit('n-org-revise', {
-            orgName,
+            orgIndex,
             attribute
         })
         return Promise.resolve();
@@ -56,16 +101,16 @@ module.exports.nReviseOrg = (orgName, attribute, value) => {
 
 
 }
-module.exports.nRevisePeer = (orgName, peerName, attribute, value) => {
+module.exports.nRevisePeer = (orgIndex, peerName, attribute, value) => {
     logger.debug('<==== nRevisePeer start ======>');
     let indexArr = [];
-    indexArr.push(orgName);
+    indexArr.push(orgIndex);
     indexArr.push(peerName);
     indexArr.push(attribute);
     return nReviseAttribute(indexArr, value).then(() => {
         logger.debug('emit n-peer-revise event')
         gatewayEventHub.emit('n-peer-revise', {
-            orgName,
+            orgIndex,
             peerName,
             attribute
         })
@@ -74,10 +119,10 @@ module.exports.nRevisePeer = (orgName, peerName, attribute, value) => {
 
 
 }
-module.exports.nAddOrg = (orgName, gatewayAddress, name, mspid, ca, peers, admin) => {
+module.exports.nAddOrg = (orgIndex, gatewayAddress, name, mspid, ca, peers, admin) => {
     let errMsg = "";
-    if (!orgName) {
-        return Promise.reject('missing orgName');
+    if (!orgIndex) {
+        return Promise.reject('missing orgIndex');
     }
     if (!name) {
         return Promise.reject('missing name');
@@ -124,8 +169,8 @@ module.exports.nAddOrg = (orgName, gatewayAddress, name, mspid, ca, peers, admin
     if (!admin.cert) {
         return Promise.reject('missing admin cert');
     }
-    if (networkConfig[orgName]) {
-        return Promise.reject(`${orgName} have exist`);
+    if (networkConfig[orgIndex]) {
+        return Promise.reject(`${orgIndex} have exist`);
     }
     let newOrg = {
         gatewayAddress,
@@ -139,13 +184,13 @@ module.exports.nAddOrg = (orgName, gatewayAddress, name, mspid, ca, peers, admin
             newOrg[peerName] = peers[peerName];
         }
     }
-    networkConfig[orgName] = newOrg;
+    networkConfig[orgIndex] = newOrg;
     saveNetworkConfigToFs();
     return Promise.resolve();
 }
 
 /**
- * @param {string} orgName : The orgName of peer you want to add;
+ * @param {string} orgIndex : The orgIndex of peer you want to add;
  * @param {Object} peers : The peers Object, content four attribute [requests, events, server-hostname,tls_cacerts];
  * {
  *     peer1:{
@@ -163,9 +208,9 @@ module.exports.nAddOrg = (orgName, gatewayAddress, name, mspid, ca, peers, admin
  *
  */
 
-module.exports.nAddPeers = (orgName, peers) => {
-    if (!orgName) {
-        return Promise.reject('missing orgName');
+module.exports.nAddPeers = (orgIndex, peers) => {
+    if (!orgIndex) {
+        return Promise.reject('missing orgIndex');
     }
     if (typeof peers != 'object') {
         return Promise.reject('peers must be a object type');
@@ -187,16 +232,16 @@ module.exports.nAddPeers = (orgName, peers) => {
             return Promise.reject('peer missing tls_cacerts');
         }
     }
-    if (!networkConfig[orgName]) {
-        return Promise.reject(`${orgName} not exist`);
+    if (!networkConfig[orgIndex]) {
+        return Promise.reject(`${orgIndex} not exist`);
     }
     if (peers) {
         for (let peerName in peers) {
-            networkConfig[orgName][peerName] = peers[peerName];
+            networkConfig[orgIndex][peerName] = peers[peerName];
         }
     }
     saveNetworkConfigToFs();
-    gatewayEventHub.emit('n-peer-add', orgName, peerName)
+    gatewayEventHub.emit('n-peer-add', orgIndex, peerName)
     return Promise.resolve();
 }
 module.exports.nAddOrderer = (ordererName, url, serverHostName, tlsCacerts) => {
@@ -229,11 +274,11 @@ module.exports.nAddOrderer = (ordererName, url, serverHostName, tlsCacerts) => {
 
 }
 /**
- * @param {string} orgName: The orgName of peers you want to remove;
+ * @param {string} orgIndex: The orgIndex of peers you want to remove;
  * @param {Array} peerNames: The peerName array you want to remove ex:["peer1","peer2"];
  *
  */
-module.exports.nRemovePeers = (orgName, peerNames) => {
+module.exports.nRemovePeers = (orgIndex, peerNames) => {
     if (!Array.isArray(peerNames)) {
         peerNames = [peerNames]
     }
@@ -241,11 +286,11 @@ module.exports.nRemovePeers = (orgName, peerNames) => {
     return new Promise((rs, rj) => {
         let promiseArr = [];
         for (let peerName of peerNames) {
-            if (!networkConfig[orgName] || !networkConfig[orgName][peerName]) {
-                throw (`Org ${orgName} or peer Name ${peerName} did not exist`);
+            if (!networkConfig[orgIndex] || !networkConfig[orgIndex][peerName]) {
+                throw (`Org ${orgIndex} or peer Name ${peerName} did not exist`);
             }
             logger.debug(`check ${peerNames} did exist in org, start to remove`);
-            promiseArr.push(nRemovePeer(orgName, peerName));
+            promiseArr.push(nRemovePeer(orgIndex, peerName));
         }
         saveNetworkConfigToFs();
         Promise.all(promiseArr).then(() => {
@@ -257,7 +302,7 @@ module.exports.nRemovePeers = (orgName, peerNames) => {
 
 
 }
-var nRemovePeer = (orgName, peerName) => {
+var nRemovePeer = (orgIndex, peerName) => {
     logger.debug('<=== nRemovePeer start ====>')
     return new Promise((rs, rj) => {
         let promiseArr = [];
@@ -266,27 +311,27 @@ var nRemovePeer = (orgName, peerName) => {
             logger.debug(`check channel ${channelName}`)
             let channelInfo = channelConfig[channelName];
             let allPeers = channelInfo.peers;
-            if (allPeers[orgName]) {
-                orgPeers = allPeers[orgName];
+            if (allPeers[orgIndex]) {
+                orgPeers = allPeers[orgIndex];
                 for (let peerInfo of orgPeers) {
                     if (peerName == peerInfo.name) {
                         logger.debug(` channel ${channelName} have peer ${peerName} in it, trigger cRemovePeerInChannel remove from channel config`);
 
-                        promiseArr.push(cRemovePeerInChannel(channelName, orgName, peerName));
+                        promiseArr.push(cRemovePeerInChannel(channelName, orgIndex, peerName));
                     }
                 }
             }
         }
 
         Promise.all(promiseArr).then(() => {
-            logger.debug(`emit n-remove-peer event ${orgName} ${peerName}`)
-            gatewayEventHub.emit('n-remove-peer', orgName, peerName);
-            logger.debug(`network config for ${orgName}`);
-            logger.debug(networkConfig[orgName]);
+            logger.debug(`emit n-remove-peer event ${orgIndex} ${peerName}`)
+            gatewayEventHub.emit('n-remove-peer', orgIndex, peerName);
+            logger.debug(`network config for ${orgIndex}`);
+            logger.debug(networkConfig[orgIndex]);
             logger.debug(`delete peer ${peerName}`);
-            delete networkConfig[orgName][peerName];
+            delete networkConfig[orgIndex][peerName];
             logger.debug('delete network config for peer success');
-            logger.debug(networkConfig[orgName]);
+            logger.debug(networkConfig[orgIndex]);
             saveNetworkConfigToFs();
             logger.debug('delete a peers in peerNames finish trigger resolve');
             rs();
@@ -298,18 +343,18 @@ var nRemovePeer = (orgName, peerName) => {
 
 
 }
-module.exports.nRemoveOrgs = (orgNames) => {
-    if (!Array.isArray(orgNames)) {
-        orgNames = [orgNames];
+module.exports.nRemoveOrgs = (orgIndexs) => {
+    if (!Array.isArray(orgIndexs)) {
+        orgIndexs = [orgIndexs];
     }
     let promiseArr = [];
-    for (let orgName of orgNames) {
+    for (let orgIndex of orgIndexs) {
         logger.debug('networkConfig');
         logger.debug(JSON.stringify(networkConfig))
-        if (!networkConfig[orgName]) {
-            return Promise.reject(`org ${orgName} did not exist`);
+        if (!networkConfig[orgIndex]) {
+            return Promise.reject(`org ${orgIndex} did not exist`);
         } else {
-            promiseArr.push(nRemoveOrg(orgName))
+            promiseArr.push(nRemoveOrg(orgIndex))
         }
     }
     return Promise.all(promiseArr).then(() => {
@@ -318,8 +363,8 @@ module.exports.nRemoveOrgs = (orgNames) => {
         return Promise.resolve()
     });
 }
-var nRemoveOrg = (orgName) => {
-    if (orgName == myOrgName) {
+var nRemoveOrg = (orgIndex) => {
+    if (orgIndex == myOrgIndex) {
         return Promise.reject('can not remove self from network config');
     }
     let promiseArr = [];
@@ -327,15 +372,15 @@ var nRemoveOrg = (orgName) => {
     for (let channelName in channelConfig) {
         let channelInfo = channelConfig[channelName];
         let allPeers = channelInfo.peers;
-        if (allPeers[orgName]) {
-            promiseArr.push(cRemoveOrgInChannel(channelName, orgName))
+        if (allPeers[orgIndex]) {
+            promiseArr.push(cRemoveOrgInChannel(channelName, orgIndex))
         }
     }
     return Promise.all(promiseArr).then(() => {
         gatewayEventHub.emit('n-remove-org', {
-            orgName
+            orgIndex
         })
-        delete networkConfig[orgName];
+        delete networkConfig[orgIndex];
         saveNetworkConfigToFs()
 
     })
@@ -403,7 +448,7 @@ module.exports.cAddChannel = (channelName, ordererNameArr, orgObjArr) => {
     return cReviseChannelOrderer(channelName, ordererObjArr).then(() => {
         let promiseArr = [];
         for (let orgObj of orgObjArr) {
-            let p = cReviseOrgInChannel(channelName, orgObj.orgName, orgObj.peerObjArr);
+            let p = cReviseOrgInChannel(channelName, orgObj.orgIndex, orgObj.peerObjArr);
             promiseArr.push(p)
         }
         return Promise.all(promiseArr);
@@ -418,16 +463,16 @@ module.exports.cAddChannel = (channelName, ordererNameArr, orgObjArr) => {
 
 }
 
-var cRemoveOrgInChannel = (channelName, orgName) => {
+var cRemoveOrgInChannel = (channelName, orgIndex) => {
     if (!channelConfig[channelName]) {
         return Promise.reject(`channel ${channelName} did not exist`);
     }
     let channelInfo = channelConfig[channelName];
     let allPeers = channelInfo.peers;
-    if (!allPeers[orgName]) {
-        return Promise.reject(`org ${orgName} did not exist in ${channelName}`);
+    if (!allPeers[orgIndex]) {
+        return Promise.reject(`org ${orgIndex} did not exist in ${channelName}`);
     }
-    delete allPeers[orgName];
+    delete allPeers[orgIndex];
     gatewayEventHub.emit('c-channel-revise', channelName);
     return Promise.resolve();
 
@@ -435,7 +480,7 @@ var cRemoveOrgInChannel = (channelName, orgName) => {
 module.exports.cRemoveOrgInChannel = cRemoveOrgInChannel;
 //channel config operation
 //{
-//     orgName: "org1",
+//     orgIndex: "org1",
 //     peerObjArr:[{name:peer1,type:e}]
 // }
 module.exports.cAddOrgInChannel = (channelName, orgObj) => {
@@ -443,12 +488,12 @@ module.exports.cAddOrgInChannel = (channelName, orgObj) => {
         return Promise.reject(`channel ${channelName} did not exist`);
     }
     let channelInfo = channelConfig[channelName];
-    if (channelInfo.peers[orgObj.orgName]) {
-        return Promise.reject(`org ${orgObj.orgName} already exist`);
+    if (channelInfo.peers[orgObj.orgIndex]) {
+        return Promise.reject(`org ${orgObj.orgIndex} already exist`);
     }
     orgObj.peerObjArr = orgObj.peerObjArr || []
-    return cReviseOrgInChannel(channelName, orgObj.orgName, orgObj.peerObjArr).then(() => {
-        if (myOrgName == orgObj.orgName) {
+    return cReviseOrgInChannel(channelName, orgObj.orgIndex, orgObj.peerObjArr).then(() => {
+        if (myOrgIndex == orgObj.orgIndex) {
 
             gatewayEventHub.emit('c-channel-revise', channelName);
         }
@@ -457,29 +502,29 @@ module.exports.cAddOrgInChannel = (channelName, orgObj) => {
 
 
 }
-module.exports.cAddPeerInChannel = (channelName, orgName, peerName, peerType) => {
+module.exports.cAddPeerInChannel = (channelName, orgIndex, peerName, peerType) => {
     if (!channelConfig[channelName]) {
         return Promise.reject(`channel ${channelName} did not existed`);
     } else {
         channelInfo = channelConfig[channelName];
-        let orgInfo = channelInfo.peers[orgName];
+        let orgInfo = channelInfo.peers[orgIndex];
         if (!orgInfo) {
-            return Promise.reject(`channel ${channelName} did not exist ${orgName} please use add org api first`);
+            return Promise.reject(`channel ${channelName} did not exist ${orgIndex} please use add org api first`);
         }
         let existedPeer = false;
         for (let peerObj of orgInfo) {
             if (peerObj.name == peerName) {
-                return Promise.reject(`channel ${channelName},peer ${peerName}  of ${orgName} already existed`);
+                return Promise.reject(`channel ${channelName},peer ${peerName}  of ${orgIndex} already existed`);
             }
         }
-        logger.debug(`orgName ${orgName} myOrgName ${myOrgName}`)
-        if (orgName == myOrgName) {
+        logger.debug(`orgIndex ${orgIndex} myOrgIndex ${myOrgIndex}`)
+        if (orgIndex == myOrgIndex) {
             logger.debug('emit c-channel-revise event for :' + channelName);
 
             gatewayEventHub.emit('c-channel-revise', channelName);
         }
 
-        return cReviseOrgInChannel(channelName, orgName, [{
+        return cReviseOrgInChannel(channelName, orgIndex, [{
             name: peerName,
             type: peerType,
             method: 'add'
@@ -487,7 +532,7 @@ module.exports.cAddPeerInChannel = (channelName, orgName, peerName, peerType) =>
     }
 }
 
-var cRemovePeerInChannel = (channelName, orgName, peerName) => {
+var cRemovePeerInChannel = (channelName, orgIndex, peerName) => {
     logger.debug('<===== cRemovePeerInChannel start =====>')
     if (!channelConfig[channelName]) {
         return Promise.reject(`channel ${channelName} did not existed`);
@@ -495,11 +540,11 @@ var cRemovePeerInChannel = (channelName, orgName, peerName) => {
     logger.debug(`get channel config of ${channelName}`);
     channelInfo = channelConfig[channelName];
     logger.debug(`${JSON.stringify(channelInfo)}`);
-    let orgInfo = channelInfo.peers[orgName];
+    let orgInfo = channelInfo.peers[orgIndex];
     if (!orgInfo) {
-        return Promise.reject(`channel ${channelName} did not exist ${orgName} please use add org api first`);
+        return Promise.reject(`channel ${channelName} did not exist ${orgIndex} please use add org api first`);
     }
-    logger.debug(`get org ${orgName} in channel ${channelName}`);
+    logger.debug(`get org ${orgIndex} in channel ${channelName}`);
     logger.debug(orgInfo)
     let existedPeer;
     logger.debug(existedPeer)
@@ -512,15 +557,15 @@ var cRemovePeerInChannel = (channelName, orgName, peerName) => {
     }
     logger.debug(`check if peer ${peerName} did exist in channel ${channelName}`);
     if (!existedPeer) {
-        return Promise.reject(`${peerName} of ${orgName} did not exist`);
+        return Promise.reject(`${peerName} of ${orgIndex} did not exist`);
     }
 
     logger.debug('remove peer from channel with cReviseOrgInChannel function');
-    return cReviseOrgInChannel(channelName, orgName, [{
+    return cReviseOrgInChannel(channelName, orgIndex, [{
         name: peerName,
         method: 'delete'
     }]).then(() => {
-        if (orgName == myOrgName) {
+        if (orgIndex == myOrgIndex) {
             logger.debug(`emit c-channel-revise for ${channelName}`);
 
             gatewayEventHub.emit('c-channel-revise', channelName);
@@ -532,14 +577,15 @@ var cRemovePeerInChannel = (channelName, orgName, peerName) => {
 
 }
 module.exports.cRemovePeerInChannel = cRemovePeerInChannel;
-module.exports.cChangePeerTypeChannel = (channelName, orgName, peerName, peerType) => {
+
+module.exports.cChangePeerTypeChannel = (channelName, orgIndex, peerName, peerType) => {
     if (!channelConfig[channelName]) {
         return Promise.reject(`channel ${channelName} did not existed`);
     }
     channelInfo = channelConfig[channelName];
-    let orgInfo = channelInfo.peers[orgName];
+    let orgInfo = channelInfo.peers[orgIndex];
     if (!orgInfo) {
-        return Promise.reject(`channel ${channelName} did not exist ${orgName} please use add org api first`);
+        return Promise.reject(`channel ${channelName} did not exist ${orgIndex} please use add org api first`);
     }
     let existedPeer = false;
     orgInfo.forEach((peerObj) => {
@@ -548,14 +594,14 @@ module.exports.cChangePeerTypeChannel = (channelName, orgName, peerName, peerTyp
         }
     })
     if (!existedPeer) {
-        return Promise.reject(`${peerName} of ${orgName} did not exist`);
+        return Promise.reject(`${peerName} of ${orgIndex} did not exist`);
     }
     let promiseArr = []
-    let p1 = cReviseOrgInChannel(channelName, orgName, [{
+    let p1 = cReviseOrgInChannel(channelName, orgIndex, [{
         name: peerName,
         method: 'delete'
     }])
-    let p2 = cReviseOrgInChannel(channelName, orgName, [{
+    let p2 = cReviseOrgInChannel(channelName, orgIndex, [{
         name: peerName,
         type: peerType,
         method: 'add'
@@ -626,10 +672,10 @@ module.exports.cRemoveOrdererInChannel = cRemoveOrdererInChannel;
 //     type:"e",
 //     method: 'delete/add(default: add)'
 // }
-var cReviseOrgInChannel = (channelName, orgName, peerObjArr) => {
+var cReviseOrgInChannel = (channelName, orgIndex, peerObjArr) => {
     logger.debug('<==== cReviseOrgInChannel ====>');
     logger.debug(`channelName ${channelName}`);
-    logger.debug(`orgName ${orgName}`);
+    logger.debug(`orgIndex ${orgIndex}`);
     logger.debug(`peerObjArr ${JSON.stringify(peerObjArr)}`);
 
 
@@ -637,13 +683,13 @@ var cReviseOrgInChannel = (channelName, orgName, peerObjArr) => {
     if (!channelObj) {
         return Promise.reject(`channelName ${channelName} of channel config did not exist`);
     }
-    if (!channelObj.peers[orgName]) {
-        channelObj.peers[orgName] = [];
+    if (!channelObj.peers[orgIndex]) {
+        channelObj.peers[orgIndex] = [];
     }
     var newOrgPeerArray = []
     //check if the peerName have existed, if true, just replace it,
     //if not, push a new peer obj info into channel Peer array
-    channelObj.peers[orgName].forEach((peer) => {
+    channelObj.peers[orgIndex].forEach((peer) => {
         var deleted = false;
         peerObjArr.forEach((peerObj) => {
             if (peerObj.name == peer.name && peerObj.method == 'delete') {
@@ -659,7 +705,7 @@ var cReviseOrgInChannel = (channelName, orgName, peerObjArr) => {
         newOrgPeerArray.forEach((peer, index) => {
             if (peer.name == peerObj.name) {
                 delete peerObj.method
-                channelObj.peers[orgName][index] = peerObj;
+                channelObj.peers[orgIndex][index] = peerObj;
                 duplicate = true;
             }
         })
@@ -669,7 +715,7 @@ var cReviseOrgInChannel = (channelName, orgName, peerObjArr) => {
         }
     })
     logger.debug(`new orgObje ${JSON.stringify(newOrgPeerArray)}`);
-    channelConfig[channelName].peers[orgName] = newOrgPeerArray;
+    channelConfig[channelName].peers[orgIndex] = newOrgPeerArray;
     saveNetworkConfigToFs();
     return Promise.resolve();
 
